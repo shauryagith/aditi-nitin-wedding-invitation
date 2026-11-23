@@ -148,6 +148,8 @@ export interface WeddingConfig {
     siteUrl: string;
     ogImage: string;
   };
+  heroSlides?: HeroSlideItem[];
+  familyMembers?: any[];
 }
 
 export interface RsvpFormData {

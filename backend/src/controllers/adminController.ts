@@ -12,6 +12,7 @@ import { eventValidationSchema, galleryValidationSchema, rsvpValidationSchema } 
 import { AuthRequest } from '../middleware/auth.js';
 import { socketEmitter } from '../socket/index.js';
 import { CMS_EVENTS } from '../socket/events.js';
+import { storageService } from '../services/storage/index.js';
 
 export const adminController = {
   getDashboard: async (req: Request, res: Response): Promise<void> => {
@@ -380,6 +381,10 @@ export const adminController = {
   deletePhoto: async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      const photo = await Gallery.findById(id);
+      if (photo?.publicId) {
+        await storageService.deleteAsset(photo.publicId, 'image').catch(() => null);
+      }
       await Gallery.findByIdAndDelete(id);
 
       await ActivityLog.create({
@@ -388,7 +393,7 @@ export const adminController = {
         action: 'DELETE',
         entity: 'GALLERY',
         entityId: id,
-        details: `Deleted gallery photo id: ${id}`,
+        details: `Deleted gallery photo: ${photo?.title || id}`,
       }).catch(() => null);
 
       // Real-Time Broadcast

@@ -128,6 +128,11 @@ export const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    return weddingSyncManager.subscribe((entity) => {
+      if (entity === 'rsvp' || entity === 'all') {
+        loadData();
+      }
+    });
   }, []);
 
   const handleLogout = async () => {

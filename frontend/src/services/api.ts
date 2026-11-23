@@ -70,12 +70,44 @@ export const weddingService = {
       if (res.data) {
         return {
           ...WEDDING_CONFIG,
+          ...res.data,
           weddingDate: res.data.weddingDate || WEDDING_CONFIG.weddingDate,
+          bride: {
+            ...WEDDING_CONFIG.bride,
+            ...(res.data.bride || {}),
+            name: res.data.brideName || res.data.bride?.name || WEDDING_CONFIG.bride.name,
+            nameHi: res.data.brideNameHi || res.data.bride?.nameHi || WEDDING_CONFIG.bride.nameHi,
+            fullName: res.data.brideFullName || res.data.brideName || res.data.bride?.fullName || WEDDING_CONFIG.bride.fullName,
+            fullNameHi: res.data.brideFullNameHi || res.data.brideNameHi || res.data.bride?.fullNameHi || WEDDING_CONFIG.bride.fullNameHi,
+            bio: res.data.brideBio || res.data.bride?.bio || WEDDING_CONFIG.bride.bio,
+            photoUrl: res.data.brideImage || res.data.bride?.photoUrl || res.data.bride?.image || WEDDING_CONFIG.bride.photoUrl,
+            image: res.data.brideImage || res.data.bride?.image || WEDDING_CONFIG.bride.photoUrl,
+            mother: res.data.brideMother || res.data.bride?.mother || WEDDING_CONFIG.bride.mother,
+            father: res.data.brideFather || res.data.bride?.father || WEDDING_CONFIG.bride.father,
+          },
+          groom: {
+            ...WEDDING_CONFIG.groom,
+            ...(res.data.groom || {}),
+            name: res.data.groomName || res.data.groom?.name || WEDDING_CONFIG.groom.name,
+            nameHi: res.data.groomNameHi || res.data.groom?.nameHi || WEDDING_CONFIG.groom.nameHi,
+            fullName: res.data.groomFullName || res.data.groomName || res.data.groom?.fullName || WEDDING_CONFIG.groom.fullName,
+            fullNameHi: res.data.groomFullNameHi || res.data.groomNameHi || res.data.groom?.fullNameHi || WEDDING_CONFIG.groom.fullNameHi,
+            bio: res.data.groomBio || res.data.groom?.bio || WEDDING_CONFIG.groom.bio,
+            photoUrl: res.data.groomImage || res.data.groom?.photoUrl || res.data.groom?.image || WEDDING_CONFIG.groom.photoUrl,
+            image: res.data.groomImage || res.data.groom?.image || WEDDING_CONFIG.groom.photoUrl,
+            mother: res.data.groomMother || res.data.groom?.mother || WEDDING_CONFIG.groom.mother,
+            father: res.data.groomFather || res.data.groom?.father || WEDDING_CONFIG.groom.father,
+          },
+          familyMembers: res.data.familyMembers && res.data.familyMembers.length > 0
+            ? res.data.familyMembers
+            : WEDDING_CONFIG.familyMembers || [],
           venue: {
             ...WEDDING_CONFIG.venue,
-            name: res.data.venue || WEDDING_CONFIG.venue.name,
-            address: res.data.address || WEDDING_CONFIG.venue.address,
-            mapUrl: res.data.mapUrl || WEDDING_CONFIG.venue.mapUrl,
+            ...(typeof res.data.venue === 'object' && res.data.venue !== null
+              ? res.data.venue
+              : { name: res.data.venue || WEDDING_CONFIG.venue.name }),
+            address: res.data.address || (typeof res.data.venue === 'object' ? res.data.venue.address : WEDDING_CONFIG.venue.address),
+            mapUrl: res.data.mapUrl || (typeof res.data.venue === 'object' ? res.data.venue.mapUrl : WEDDING_CONFIG.venue.mapUrl),
           },
           invitationMessage: {
             english: res.data.invitationMessage || WEDDING_CONFIG.invitationMessage.english,
@@ -182,19 +214,28 @@ export const weddingService = {
         method: 'POST',
         body: JSON.stringify(formData),
       });
-    } catch (err) {
-      // LocalStorage fallback for seamless offline / client-only mode
-      try {
-        const stored = JSON.parse(localStorage.getItem('aditi_nitin_rsvps') || '[]');
-        stored.push({ ...formData, createdAt: new Date().toISOString() });
-        localStorage.setItem('aditi_nitin_rsvps', JSON.stringify(stored));
-        return {
-          success: true,
-          message: 'RSVP recorded locally with heartfelt blessings!',
-        };
-      } catch {
-        throw err;
+    } catch (err: any) {
+      // Only fallback to local storage if user is truly offline (no network / client offline)
+      const isNetworkOffline =
+        (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        (err instanceof TypeError && err.message.toLowerCase().includes('fetch')) ||
+        (err?.message && err.message.toLowerCase().includes('failed to fetch'));
+
+      if (isNetworkOffline) {
+        try {
+          const stored = JSON.parse(localStorage.getItem('aditi_nitin_rsvps') || '[]');
+          stored.push({ ...formData, createdAt: new Date().toISOString() });
+          localStorage.setItem('aditi_nitin_rsvps', JSON.stringify(stored));
+          return {
+            success: true,
+            message: 'You appear to be offline. Your RSVP has been saved locally and will be recorded!',
+          };
+        } catch {
+          // Fall through to throw original err
+        }
       }
+      // Re-throw server validation errors, rate limits, duplicate submissions, and 500s
+      throw err;
     }
   },
 };

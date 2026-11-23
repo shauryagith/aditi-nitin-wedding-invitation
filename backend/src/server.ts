@@ -620,8 +620,8 @@ export const startServer = async () => {
   const httpServer = createServer(app);
   const io = initSocketIO(httpServer);
 
-  const server = httpServer.listen(ENV.PORT, () => {
-    console.log(`✨ [Server] Aditi & Nitin Wedding Backend running on http://localhost:${ENV.PORT}`);
+  const server = httpServer.listen(ENV.PORT, '0.0.0.0', () => {
+    console.log(`✨ [Server] Aditi & Nitin Wedding Backend running on http://0.0.0.0:${ENV.PORT}`);
     console.log(`✨ [Server] Environment: ${ENV.NODE_ENV}`);
     console.log(`✨ [Server] Media Storage Provider: ${storageStatus.provider}`);
     console.log(`✨ [Socket.IO] Real-time engine attached and listening on port ${ENV.PORT}`);

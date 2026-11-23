@@ -41,6 +41,8 @@ export const rsvpController = {
 
       // Real-Time Notification to Admin Dashboard
       socketEmitter.emitToAdmin(CMS_EVENTS.ADMIN_RSVP_RECEIVED, {
+        entity: 'rsvp',
+        action: 'receive',
         id: guest._id.toString(),
         name: guest.name,
         attendanceStatus: guest.attendanceStatus,

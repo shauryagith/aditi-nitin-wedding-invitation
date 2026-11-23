@@ -74,7 +74,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     },
     {
       title: 'Media Assets',
-      value: stats.totalMedia || 14,
+      value: stats.totalMedia ?? 0,
       subtitle: 'WebP Optimized',
       icon: ImageIcon,
       color: 'from-purple-500/20 to-purple-600/10 border-purple-500/30 text-purple-300',
@@ -82,7 +82,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     },
     {
       title: 'Background Music',
-      value: stats.totalMusic || 1,
+      value: stats.totalMusic ?? 0,
       subtitle: 'Active Shehnai & Sitar',
       icon: Music,
       color: 'from-pink-500/20 to-pink-600/10 border-pink-500/30 text-pink-300',
@@ -90,7 +90,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     },
     {
       title: 'Wedding Events',
-      value: stats.totalEvents || 4,
+      value: stats.totalEvents ?? 0,
       subtitle: 'Dec 11, 2026',
       icon: Calendar,
       color: 'from-amber-600/20 to-yellow-600/10 border-amber-600/30 text-yellow-300',
@@ -98,7 +98,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     },
     {
       title: 'Active QR Codes',
-      value: stats.totalQRs || 4,
+      value: stats.totalQRs ?? 0,
       subtitle: 'High-Res Scannable',
       icon: QrCode,
       color: 'from-teal-500/20 to-teal-600/10 border-teal-500/30 text-teal-300',

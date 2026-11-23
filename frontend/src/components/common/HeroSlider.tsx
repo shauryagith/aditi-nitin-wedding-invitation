@@ -1,10 +1,14 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, EffectFade, Navigation, Pagination } from 'swiper/modules';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles, Calendar, Heart, Share2, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { WEDDING_CONFIG } from '../../config/wedding.config';
+import { weddingService } from '../../services/api';
+import { weddingSyncManager } from '../../utils/dataSync';
+import { useRealtimeCMS } from '../../hooks/useRealtimeCMS';
+import { HeroSlideItem } from '../../types/wedding';
 import { GaneshaEmblem, OrnamentalDivider, FloatingPetalsOverlay } from './DecorativeOrnaments';
 
 // Import Swiper styles
@@ -23,19 +27,60 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
   const { language, t } = useLanguage();
   const prevRef = useRef<HTMLButtonElement | null>(null);
   const nextRef = useRef<HTMLButtonElement | null>(null);
+  const [dynamicSlides, setDynamicSlides] = useState<HeroSlideItem[]>([]);
+  const [coupleNames, setCoupleNames] = useState({
+    brideName: WEDDING_CONFIG.bride.name,
+    brideNameHi: WEDDING_CONFIG.bride.nameHi,
+    groomName: WEDDING_CONFIG.groom.name,
+    groomNameHi: WEDDING_CONFIG.groom.nameHi,
+  });
+
+  const loadHeroData = useCallback(() => {
+    weddingService
+      .getWeddingDetails()
+      .then((data: any) => {
+        if (data) {
+          if (data.heroSlides && Array.isArray(data.heroSlides) && data.heroSlides.length > 0) {
+            setDynamicSlides(data.heroSlides.filter((s: any) => s.isActive !== false));
+          }
+          if (data.bride || data.groom) {
+            setCoupleNames({
+              brideName: data.bride?.name || WEDDING_CONFIG.bride.name,
+              brideNameHi: data.bride?.nameHi || WEDDING_CONFIG.bride.nameHi,
+              groomName: data.groom?.name || WEDDING_CONFIG.groom.name,
+              groomNameHi: data.groom?.nameHi || WEDDING_CONFIG.groom.nameHi,
+            });
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadHeroData();
+    return weddingSyncManager.subscribe((entity) => {
+      if (entity === 'hero' || entity === 'wedding' || entity === 'all') {
+        loadHeroData();
+      }
+    });
+  }, [loadHeroData]);
+
+  useRealtimeCMS(['hero', 'wedding'], () => {
+    loadHeroData();
+  });
 
   const scrollTo = (id: string) => {
     const el = document.querySelector(id);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const slides = [
+  const defaultSlides = [
     {
       id: 1,
       image: WEDDING_IMAGES.hero.slide1,
       alt: 'Aditi and Nitin Royal Wedding in Traditional Attire',
       subtitle: language === 'hi' ? '॥ श्री गणेशाय नमः ॥' : '॥ Shree Ganeshay Namah ॥',
-      title: language === 'hi' ? 'अदिति ❤️ नितिन' : 'Aditi ❤️ Nitin',
+      title: language === 'hi' ? `${coupleNames.brideNameHi} ❤️ ${coupleNames.groomNameHi}` : `${coupleNames.brideName} ❤️ ${coupleNames.groomName}`,
       highlight: language === 'hi' ? 'सदा साथ • Together Forever' : 'Together Forever',
       date: language === 'hi' ? '११ दिसम्बर २०२६ • गोरखपुर' : '11 December 2026 • Gorakhpur',
       isHeroTitle: true,
@@ -71,6 +116,20 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
       isHeroTitle: false,
     },
   ];
+
+  const slides =
+    dynamicSlides.length > 0
+      ? dynamicSlides.map((s, idx) => ({
+          id: s.id || `dyn-slide-${idx}`,
+          image: s.desktopImage || WEDDING_IMAGES.hero.slide1,
+          alt: s.title || 'Aditi and Nitin Royal Wedding',
+          subtitle: s.dateBadge || (language === 'hi' ? '॥ श्री गणेशाय नमः ॥' : '॥ Shree Ganeshay Namah ॥'),
+          title: s.title || (language === 'hi' ? `${coupleNames.brideNameHi} ❤️ ${coupleNames.groomNameHi}` : `${coupleNames.brideName} ❤️ ${coupleNames.groomName}`),
+          highlight: s.subtitle || (language === 'hi' ? 'सदा साथ • Together Forever' : 'Together Forever'),
+          date: s.dateBadge || (language === 'hi' ? '११ दिसम्बर २०२६ • गोरखपुर' : '11 December 2026 • Gorakhpur'),
+          isHeroTitle: idx === 0,
+        }))
+      : defaultSlides;
 
   return (
     <section id="hero" className="relative w-full h-screen min-h-[640px] max-h-[1080px] overflow-hidden bg-deepBurgundy">
@@ -167,13 +226,13 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
                 <div className="my-2 sm:my-4">
                   <h1 className="font-heading text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-ivory drop-shadow-lg">
                     <span className="font-script text-4xl xs:text-5xl sm:text-7xl md:text-8xl text-champagne block sm:inline">
-                      {language === 'hi' ? WEDDING_CONFIG.bride.nameHi : WEDDING_CONFIG.bride.name}
+                      {language === 'hi' ? coupleNames.brideNameHi : coupleNames.brideName}
                     </span>
                     <span className="mx-2 sm:mx-6 text-royalGold font-cormorant text-2xl sm:text-5xl inline-block align-middle font-normal animate-pulse">
                       ❤️
                     </span>
                     <span className="font-script text-4xl xs:text-5xl sm:text-7xl md:text-8xl text-champagne block sm:inline">
-                      {language === 'hi' ? WEDDING_CONFIG.groom.nameHi : WEDDING_CONFIG.groom.name}
+                      {language === 'hi' ? coupleNames.groomNameHi : coupleNames.groomName}
                     </span>
                   </h1>
                 </div>

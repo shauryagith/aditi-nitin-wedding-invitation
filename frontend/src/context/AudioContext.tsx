@@ -7,6 +7,7 @@ interface AudioContextType {
   isPlaying: boolean;
   isMuted: boolean;
   volume: number;
+  currentTrack: { title: string; artist: string } | null;
   togglePlay: () => void;
   toggleMute: () => void;
   setVolume: (val: number) => void;
@@ -19,6 +20,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [volume, setVolumeState] = useState<number>(0.65);
+  const [currentTrack, setCurrentTrack] = useState<{ title: string; artist: string } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const synthIntervalRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -94,6 +96,10 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         .getActiveMusic()
         .then((track) => {
           if (track && (track.fileUrl || track.secureUrl) && audioRef.current) {
+            setCurrentTrack({
+              title: track.title || WEDDING_CONFIG.music.title,
+              artist: track.artist || WEDDING_CONFIG.music.artist,
+            });
             const rawUrl = track.secureUrl || track.fileUrl;
             const resolvedUrl = rawUrl.startsWith('http')
               ? rawUrl
@@ -187,6 +193,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isPlaying,
         isMuted,
         volume,
+        currentTrack,
         togglePlay,
         toggleMute,
         setVolume,

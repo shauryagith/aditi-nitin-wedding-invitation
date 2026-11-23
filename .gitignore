@@ -59,6 +59,10 @@ temp/
 # Local uploads
 uploads/*
 !uploads/.gitkeep
+backend/public/uploads/*
+!backend/public/uploads/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
 # Private keys
 *.pem
 *.key

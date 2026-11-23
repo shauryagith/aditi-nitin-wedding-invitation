@@ -6,7 +6,7 @@ import { WEDDING_CONFIG } from '../../config/wedding.config';
 import { useLanguage } from '../../context/LanguageContext';
 
 export const MusicPlayer: React.FC = () => {
-  const { isPlaying, isMuted, volume, togglePlay, toggleMute, setVolume } = useAudio();
+  const { isPlaying, isMuted, volume, currentTrack, togglePlay, toggleMute, setVolume } = useAudio();
   const { language } = useLanguage();
   const [showControls, setShowControls] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -40,10 +40,10 @@ export const MusicPlayer: React.FC = () => {
               </div>
               <div className="overflow-hidden">
                 <p className="text-xs font-bold text-champagne truncate">
-                  {WEDDING_CONFIG.music.title}
+                  {currentTrack?.title || WEDDING_CONFIG.music.title}
                 </p>
                 <p className="text-[10px] text-ivory/70 truncate">
-                  {WEDDING_CONFIG.music.artist}
+                  {currentTrack?.artist || WEDDING_CONFIG.music.artist}
                 </p>
               </div>
             </div>

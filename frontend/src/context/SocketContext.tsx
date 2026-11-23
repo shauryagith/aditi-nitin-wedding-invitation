@@ -93,6 +93,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       else if (payload.entity === 'family') message = '✨ Family Details updated live';
       else if (payload.entity === 'hero') message = '✨ Hero Slider updated live';
       else if (payload.entity === 'venue') message = '✨ Venue Details updated live';
+      else if (payload.entity === 'rsvp') message = '🎉 New RSVP received live!';
 
       showNotification(message);
     };

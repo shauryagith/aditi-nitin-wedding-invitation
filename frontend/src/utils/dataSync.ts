@@ -141,7 +141,8 @@ class WeddingSyncManager {
     this.isPolling = true;
 
     try {
-      const res = await fetch('/api/sync-status', {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
+      const res = await fetch(`${apiBase}/sync-status`, {
         headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
       });
       if (res.ok) {

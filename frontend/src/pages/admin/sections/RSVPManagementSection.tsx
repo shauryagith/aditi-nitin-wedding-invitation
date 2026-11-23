@@ -16,6 +16,7 @@ import {
   Check,
 } from 'lucide-react';
 import { adminService } from '../../../services/api';
+import { weddingSyncManager } from '../../../utils/dataSync';
 import { GuestRecord } from '../../../types/wedding';
 
 interface RSVPManagementSectionProps {
@@ -55,6 +56,12 @@ export const RSVPManagementSection: React.FC<RSVPManagementSectionProps> = ({
 
   useEffect(() => {
     fetchGuests();
+    return weddingSyncManager.subscribe((entity) => {
+      if (entity === 'rsvp' || entity === 'all') {
+        fetchGuests();
+        onRefreshStats();
+      }
+    });
   }, [attendanceFilter, searchTerm]);
 
   const handleOpenAdd = () => {
