@@ -21,10 +21,14 @@ export const WEDDING_IMAGES = {
 
   // Hero Full-Screen Cinematic Slider (4 Distinct Slides)
   hero: {
-    slide1: '/wedding-assets/Gemini_Generated_Image_b3ymbrb3ymbrb3ym.webp', // #3 Royal Couple in Crimson Lehenga & Sherwani
-    slide2: '/wedding-assets/Gemini_Generated_Image_mtk13zmtk13zmtk1.webp', // #9 Vedic Wedding Mandap with Sacred Agni
-    slide3: '/wedding-assets/Gemini_Generated_Image_y1x1dny1x1dny1x1 (1).webp', // #29 Grand Traditional Baraat on Horseback
-    slide4: '/wedding-assets/Gemini_Generated_Image_mtk13zmtk13zmtk1 (4).webp', // #8 Regal Couple Portrait under Carved Arches
+    slide1: 'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354463/wedding/gallery/gal_couple_1_sunset_palace.jpg', // #3 Royal Couple in Crimson Lehenga & Sherwani
+    slide2: 'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354461/wedding/events/wedding_ceremony.jpg', // #9 Vedic Wedding Mandap with Sacred Agni
+    slide3: 'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354484/wedding/gallery/gal_celebration_1_baraat_procession.jpg', // #29 Grand Traditional Baraat on Horseback
+    slide4: 'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354465/wedding/gallery/gal_couple_2_carved_arches.jpg', // #8 Regal Couple Portrait under Carved Arches
+    fallbackSlide1: '/wedding-assets/Gemini_Generated_Image_b3ymbrb3ymbrb3ym.webp',
+    fallbackSlide2: '/wedding-assets/Gemini_Generated_Image_mtk13zmtk13zmtk1.webp',
+    fallbackSlide3: '/wedding-assets/Gemini_Generated_Image_y1x1dny1x1dny1x1 (1).webp',
+    fallbackSlide4: '/wedding-assets/Gemini_Generated_Image_mtk13zmtk13zmtk1 (4).webp',
   },
 
   // Bride Profiles & Solo Portraits (Aditi Srivastava)

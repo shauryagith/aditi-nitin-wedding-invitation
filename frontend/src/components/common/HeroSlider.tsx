@@ -78,6 +78,8 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
     {
       id: 1,
       image: WEDDING_IMAGES.hero.slide1,
+      mobileImage: WEDDING_IMAGES.hero.slide1,
+      fallbackImage: WEDDING_IMAGES.hero.fallbackSlide1,
       alt: 'Aditi and Nitin Royal Wedding in Traditional Attire',
       subtitle: language === 'hi' ? '॥ श्री गणेशाय नमः ॥' : '॥ Shree Ganeshay Namah ॥',
       title: language === 'hi' ? `${coupleNames.brideNameHi} ❤️ ${coupleNames.groomNameHi}` : `${coupleNames.brideName} ❤️ ${coupleNames.groomName}`,
@@ -88,6 +90,8 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
     {
       id: 2,
       image: WEDDING_IMAGES.hero.slide2,
+      mobileImage: WEDDING_IMAGES.hero.slide2,
+      fallbackImage: WEDDING_IMAGES.hero.fallbackSlide2,
       alt: 'Traditional Hindu Wedding Mandap Decorated with Marigolds and Sacred Agni',
       subtitle: language === 'hi' ? 'श्रीवास्तव एवं जोशी परिवार' : 'The Srivastava & Joshi Families',
       title: language === 'hi' ? 'दो परिवार, एक पावन मिलन' : 'Two Families, One Beautiful Celebration',
@@ -98,6 +102,8 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
     {
       id: 3,
       image: WEDDING_IMAGES.hero.slide3,
+      mobileImage: WEDDING_IMAGES.hero.slide3,
+      fallbackImage: WEDDING_IMAGES.hero.fallbackSlide3,
       alt: 'Romantic Royal Indian Couple Pre-Wedding Celebration',
       subtitle: language === 'hi' ? 'मांगलिक वैदिक संस्कार' : 'Sacred Vedic Rituals',
       title: language === 'hi' ? 'परंपराओं का स्वर्णिम उत्सव' : 'A Celebration of Traditions',
@@ -108,6 +114,8 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
     {
       id: 4,
       image: WEDDING_IMAGES.hero.slide4,
+      mobileImage: WEDDING_IMAGES.hero.slide4,
+      fallbackImage: WEDDING_IMAGES.hero.fallbackSlide4,
       alt: 'Grand Traditional Indian Wedding Ceremonial Welcome and Floral Decor',
       subtitle: language === 'hi' ? 'सादर आमंत्रण' : 'Cordial Invitation',
       title: language === 'hi' ? 'आपकी उपस्थिति हमारा सौभाग्य' : 'Your Presence Is Our Blessing',
@@ -117,18 +125,44 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
     },
   ];
 
+  const getFallbackForIndex = (idx: number): string => {
+    switch (idx % 4) {
+      case 0:
+        return WEDDING_IMAGES.hero.fallbackSlide1;
+      case 1:
+        return WEDDING_IMAGES.hero.fallbackSlide2;
+      case 2:
+        return WEDDING_IMAGES.hero.fallbackSlide3;
+      case 3:
+        return WEDDING_IMAGES.hero.fallbackSlide4;
+      default:
+        return WEDDING_IMAGES.hero.fallbackSlide1;
+    }
+  };
+
   const slides =
     dynamicSlides.length > 0
-      ? dynamicSlides.map((s, idx) => ({
-          id: s.id || `dyn-slide-${idx}`,
-          image: s.desktopImage || WEDDING_IMAGES.hero.slide1,
-          alt: s.title || 'Aditi and Nitin Royal Wedding',
-          subtitle: s.dateBadge || (language === 'hi' ? '॥ श्री गणेशाय नमः ॥' : '॥ Shree Ganeshay Namah ॥'),
-          title: s.title || (language === 'hi' ? `${coupleNames.brideNameHi} ❤️ ${coupleNames.groomNameHi}` : `${coupleNames.brideName} ❤️ ${coupleNames.groomName}`),
-          highlight: s.subtitle || (language === 'hi' ? 'सदा साथ • Together Forever' : 'Together Forever'),
-          date: s.dateBadge || (language === 'hi' ? '११ दिसम्बर २०२६ • गोरखपुर' : '11 December 2026 • Gorakhpur'),
-          isHeroTitle: idx === 0,
-        }))
+      ? dynamicSlides.map((s, idx) => {
+          const fallback = getFallbackForIndex(idx);
+          const defaultSlide = defaultSlides[idx % defaultSlides.length];
+          const rawImage = s.desktopImage || defaultSlide.image;
+          // Clean empty or broken paths
+          const image = rawImage && !rawImage.includes('undefined') ? rawImage : defaultSlide.image;
+          const mobileImage = s.mobileImage || image;
+
+          return {
+            id: s.id || `dyn-slide-${idx}`,
+            image,
+            mobileImage,
+            fallbackImage: fallback,
+            alt: s.title || defaultSlide.alt,
+            subtitle: s.dateBadge || (language === 'hi' ? '॥ श्री गणेशाय नमः ॥' : '॥ Shree Ganeshay Namah ॥'),
+            title: s.title || (language === 'hi' ? `${coupleNames.brideNameHi} ❤️ ${coupleNames.groomNameHi}` : `${coupleNames.brideName} ❤️ ${coupleNames.groomName}`),
+            highlight: s.subtitle || (language === 'hi' ? 'सदा साथ • Together Forever' : 'Together Forever'),
+            date: s.dateBadge || (language === 'hi' ? '११ दिसम्बर २०२६ • गोरखपुर' : '11 December 2026 • Gorakhpur'),
+            isHeroTitle: idx === 0,
+          };
+        })
       : defaultSlides;
 
   return (
@@ -193,12 +227,23 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
           <SwiperSlide key={slide.id} className="relative w-full h-full overflow-hidden">
             {/* Background Image with Smooth Ken Burns Zoom */}
             <div className="absolute inset-0 w-full h-full overflow-hidden">
-              <img
-                src={slide.image}
-                alt={slide.alt}
-                className="w-full h-full object-cover object-center ken-burns-active"
-                loading="eager"
-              />
+              <picture className="w-full h-full">
+                {slide.mobileImage && slide.mobileImage !== slide.image && (
+                  <source media="(max-width: 768px)" srcSet={slide.mobileImage} />
+                )}
+                <img
+                  src={slide.image}
+                  alt={slide.alt}
+                  className="w-full h-full object-cover object-center ken-burns-active"
+                  loading="eager"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (slide.fallbackImage && target.src !== slide.fallbackImage && !target.src.endsWith(slide.fallbackImage)) {
+                      target.src = slide.fallbackImage;
+                    }
+                  }}
+                />
+              </picture>
             </div>
 
             {/* Cinematic Gradient Overlays (Deep Burgundy to Royal Maroon) */}

@@ -18,8 +18,8 @@ export const HeroSliderSection: React.FC<HeroSliderSectionProps> = ({
       : [
           {
             id: 'slide-1',
-            desktopImage: '/wedding-assets/optimized/hero-main.webp',
-            mobileImage: '/wedding-assets/optimized/hero-main.webp',
+            desktopImage: 'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354463/wedding/gallery/gal_couple_1_sunset_palace.jpg',
+            mobileImage: 'https://res.cloudinary.com/ddpjysnr8/image/upload/c_fill,g_auto,w_800,h_1200,q_auto/v1/wedding/gallery/gal_couple_1_sunset_palace.webp',
             title: 'Aditi & Nitin',
             subtitle: 'The Royal Wedding Celebration',
             dateBadge: 'December 11, 2026',
@@ -28,12 +28,32 @@ export const HeroSliderSection: React.FC<HeroSliderSectionProps> = ({
           },
           {
             id: 'slide-2',
-            desktopImage: '/wedding-assets/optimized/hero-ring.webp',
-            mobileImage: '/wedding-assets/optimized/hero-ring.webp',
-            title: 'Two Souls, One Destiny',
-            subtitle: 'Celebrating Love, Tradition & Eternity',
+            desktopImage: 'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354461/wedding/events/wedding_ceremony.jpg',
+            mobileImage: 'https://res.cloudinary.com/ddpjysnr8/image/upload/c_fill,g_auto,w_800,h_1200,q_auto/v1/wedding/events/wedding_ceremony.webp',
+            title: 'Two Families, One Beautiful Celebration',
+            subtitle: 'Join us in celebrating love and togetherness.',
             dateBadge: 'December 11, 2026',
             order: 2,
+            isActive: true,
+          },
+          {
+            id: 'slide-3',
+            desktopImage: 'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354484/wedding/gallery/gal_celebration_1_baraat_procession.jpg',
+            mobileImage: 'https://res.cloudinary.com/ddpjysnr8/image/upload/c_fill,g_auto,w_800,h_1200,q_auto/v1/wedding/gallery/gal_celebration_1_baraat_procession.webp',
+            title: 'A Celebration of Traditions',
+            subtitle: 'Haldi | Mehndi | Tilak | Wedding',
+            dateBadge: 'December 11, 2026',
+            order: 3,
+            isActive: true,
+          },
+          {
+            id: 'slide-4',
+            desktopImage: 'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354465/wedding/gallery/gal_couple_2_carved_arches.jpg',
+            mobileImage: 'https://res.cloudinary.com/ddpjysnr8/image/upload/c_fill,g_auto,w_800,h_1200,q_auto/v1/wedding/gallery/gal_couple_2_carved_arches.webp',
+            title: 'Your Presence Is Our Blessing',
+            subtitle: 'We cordially invite you to celebrate with us.',
+            dateBadge: 'December 11, 2026',
+            order: 4,
             isActive: true,
           },
         ]
@@ -45,8 +65,8 @@ export const HeroSliderSection: React.FC<HeroSliderSectionProps> = ({
   const handleAddSlide = () => {
     const newSlide: HeroSlideItem = {
       id: `slide-${Date.now()}`,
-      desktopImage: '/wedding-assets/optimized/hero-main.webp',
-      mobileImage: '/wedding-assets/optimized/hero-main.webp',
+      desktopImage: 'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354463/wedding/gallery/gal_couple_1_sunset_palace.jpg',
+      mobileImage: 'https://res.cloudinary.com/ddpjysnr8/image/upload/c_fill,g_auto,w_800,h_1200,q_auto/v1/wedding/gallery/gal_couple_1_sunset_palace.webp',
       title: 'Royal Celebration',
       subtitle: 'Aditi & Nitin Wedding',
       dateBadge: 'December 11, 2026',

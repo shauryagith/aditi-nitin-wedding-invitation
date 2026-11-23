@@ -11,14 +11,20 @@ const allowedOrigins = [
   ENV.CLIENT_URL,
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  'https://aditi-nitin-wedding-invitation.vercel.app',
   'https://aditinitinwedding.com',
+  'https://www.aditinitinwedding.com',
 ];
 
 export const initSocketIO = (httpServer: HttpServer): SocketIOServer => {
   io = new SocketIOServer(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (
+          !origin ||
+          allowedOrigins.includes(origin) ||
+          /\.vercel\.app$/.test(origin)
+        ) {
           callback(null, true);
         } else {
           callback(null, true);

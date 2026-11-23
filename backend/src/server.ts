@@ -38,13 +38,19 @@ const allowedOrigins = [
   ENV.CLIENT_URL,
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  'https://aditi-nitin-wedding-invitation.vercel.app',
   'https://aditinitinwedding.com',
+  'https://www.aditinitinwedding.com',
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        /\.vercel\.app$/.test(origin)
+      ) {
         callback(null, true);
       } else if (ENV.NODE_ENV === 'production') {
         callback(new Error('Blocked by CORS policy'));
@@ -196,6 +202,68 @@ export async function seedInitialData() {
       ] as any;
       await weddingRecord.save();
       console.log('[Seed] Seeded 4 authentic Our Story milestones with Cloudinary images');
+    }
+
+    // 2c. Seed / Repair Hero Slides with authentic Cloudinary images & local fallbacks
+    if (
+      !weddingRecord.heroSlides ||
+      weddingRecord.heroSlides.length < 4 ||
+      weddingRecord.heroSlides.some(
+        (s: any) => !s.desktopImage || s.desktopImage.includes('/wedding-assets/optimized/')
+      )
+    ) {
+      weddingRecord.heroSlides = [
+        {
+          id: 'slide-1',
+          desktopImage:
+            'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354463/wedding/gallery/gal_couple_1_sunset_palace.jpg',
+          mobileImage:
+            'https://res.cloudinary.com/ddpjysnr8/image/upload/c_fill,g_auto,w_800,h_1200,q_auto/v1/wedding/gallery/gal_couple_1_sunset_palace.webp',
+          title: 'Aditi & Nitin',
+          subtitle: 'The Royal Wedding Celebration',
+          dateBadge: 'December 11, 2026',
+          order: 1,
+          isActive: true,
+        },
+        {
+          id: 'slide-2',
+          desktopImage:
+            'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354461/wedding/events/wedding_ceremony.jpg',
+          mobileImage:
+            'https://res.cloudinary.com/ddpjysnr8/image/upload/c_fill,g_auto,w_800,h_1200,q_auto/v1/wedding/events/wedding_ceremony.webp',
+          title: 'Two Families, One Beautiful Celebration',
+          subtitle: 'Join us in celebrating love and togetherness.',
+          dateBadge: 'December 11, 2026',
+          order: 2,
+          isActive: true,
+        },
+        {
+          id: 'slide-3',
+          desktopImage:
+            'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354484/wedding/gallery/gal_celebration_1_baraat_procession.jpg',
+          mobileImage:
+            'https://res.cloudinary.com/ddpjysnr8/image/upload/c_fill,g_auto,w_800,h_1200,q_auto/v1/wedding/gallery/gal_celebration_1_baraat_procession.webp',
+          title: 'A Celebration of Traditions',
+          subtitle: 'Haldi | Mehndi | Tilak | Wedding',
+          dateBadge: 'December 11, 2026',
+          order: 3,
+          isActive: true,
+        },
+        {
+          id: 'slide-4',
+          desktopImage:
+            'https://res.cloudinary.com/ddpjysnr8/image/upload/v1795354465/wedding/gallery/gal_couple_2_carved_arches.jpg',
+          mobileImage:
+            'https://res.cloudinary.com/ddpjysnr8/image/upload/c_fill,g_auto,w_800,h_1200,q_auto/v1/wedding/gallery/gal_couple_2_carved_arches.webp',
+          title: 'Your Presence Is Our Blessing',
+          subtitle: 'We cordially invite you to celebrate with us.',
+          dateBadge: 'December 11, 2026',
+          order: 4,
+          isActive: true,
+        },
+      ] as any;
+      await weddingRecord.save();
+      console.log('[Seed] 4 authentic Hero slides seeded and repaired with Cloudinary images');
     }
 
     // 3. Seed / Repair Wedding Events with verified Cloudinary images
