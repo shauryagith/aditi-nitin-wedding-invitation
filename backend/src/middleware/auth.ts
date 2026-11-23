@@ -48,6 +48,10 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
       token = req.headers.authorization.split(' ')[1];
     }
 
+    if (!token && typeof req.query?.token === 'string') {
+      token = req.query.token;
+    }
+
     if (!token) {
       res.status(401).json({
         success: false,

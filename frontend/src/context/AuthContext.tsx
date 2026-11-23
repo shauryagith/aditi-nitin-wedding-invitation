@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { adminService } from '../services/api';
+import { adminService, getStoredToken, setStoredToken } from '../services/api';
 
 export interface AdminUser {
   id?: string;
@@ -31,9 +31,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAdmin(res.data.admin);
         return res.data.admin;
       }
+      setStoredToken(null);
       setAdmin(null);
       return null;
     } catch {
+      setStoredToken(null);
       setAdmin(null);
       return null;
     } finally {
@@ -46,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for unauthorized 401 events from any API call to immediately invalidate session
     const handleUnauthorized = () => {
+      setStoredToken(null);
       setAdmin(null);
       setIsLoading(false);
     };
@@ -61,6 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await adminService.login(email, password);
       if (res.success && res.data?.admin) {
+        if (res.data.token) {
+          setStoredToken(res.data.token);
+        }
         setAdmin(res.data.admin);
         return res.data.admin;
       }
@@ -73,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
+      setStoredToken(null);
       await adminService.logout().catch(() => null);
     } finally {
       setAdmin(null);

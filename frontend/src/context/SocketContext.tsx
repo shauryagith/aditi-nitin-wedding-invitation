@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { Socket } from 'socket.io-client';
-import { initializeSocket, CMS_EVENTS, ConnectionState, RealtimeCmsPayload } from '../lib/socket';
+import { initializeSocket, updateSocketAuth, CMS_EVENTS, ConnectionState, RealtimeCmsPayload } from '../lib/socket';
+import { getStoredToken } from '../services/api';
 import { weddingSyncManager } from '../utils/dataSync';
 
 interface SocketContextType {
@@ -42,6 +43,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
   const joinAdminRoom = useCallback(() => {
     if (socket && isConnected) {
+      const token = getStoredToken();
+      if (token && (!socket.auth || !(socket.auth as any).token)) {
+        updateSocketAuth(token);
+      }
       socket.emit('join:room', 'admin:dashboard', (res: any) => {
         if (res?.success) {
           console.log('✨ [Socket.IO] Joined admin:dashboard room');
@@ -51,7 +56,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   }, [socket, isConnected]);
 
   useEffect(() => {
-    const s = initializeSocket();
+    const token = getStoredToken();
+    const s = initializeSocket(token);
     setSocket(s);
 
     const onConnect = () => {

@@ -72,14 +72,20 @@ export const getSocketUrl = (): string => {
   if (window.location.port === '5173') {
     return 'http://localhost:5000';
   }
+  // In production, derive backend URL from VITE_API_BASE_URL if it is an absolute URL
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  if (apiBase && /^https?:\/\//i.test(apiBase)) {
+    return apiBase.replace(/\/api\/?$/, '');
+  }
   return window.location.origin;
 };
 
-export const initializeSocket = (): Socket => {
+export const initializeSocket = (token?: string | null): Socket => {
   if (!socketInstance) {
     const url = getSocketUrl();
     socketInstance = io(url, {
       withCredentials: true,
+      auth: token ? { token } : undefined,
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -90,6 +96,15 @@ export const initializeSocket = (): Socket => {
     });
   }
   return socketInstance;
+};
+
+export const updateSocketAuth = (token: string | null): void => {
+  if (socketInstance) {
+    socketInstance.auth = token ? { token } : {};
+    if (socketInstance.connected) {
+      socketInstance.disconnect().connect();
+    }
+  }
 };
 
 export const getSocket = (): Socket => {

@@ -7,7 +7,9 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5173',
   'http://localhost:5000',
   'http://127.0.0.1:5000',
+  'https://aditi-nitin-wedding-invitation.vercel.app',
   'https://aditinitinwedding.com',
+  'https://www.aditinitinwedding.com',
 ].filter(Boolean);
 
 /**
@@ -43,9 +45,9 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
 
     // Validate Origin if present
     if (origin) {
-      const isAllowed = ALLOWED_ORIGINS.some((allowed) => 
-        origin === allowed || origin.startsWith(allowed)
-      );
+      const isAllowed =
+        ALLOWED_ORIGINS.some((allowed) => origin === allowed || origin.startsWith(allowed)) ||
+        /\.vercel\.app$/.test(origin);
       if (!isAllowed && ENV.NODE_ENV === 'production') {
         res.status(403).json({
           success: false,

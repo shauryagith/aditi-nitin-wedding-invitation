@@ -15,31 +15,63 @@ import {
 } from '../types/wedding';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const TOKEN_KEY = 'aditi_nitin_admin_jwt';
 
 /**
- * Helper to handle fetch with JSON parsing and error wrapping
+ * Dual-layer token persistence:
+ * Checks localStorage first, then sessionStorage, and in-memory.
+ */
+export const getStoredToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+};
+
+export const setStoredToken = (token: string | null): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+      sessionStorage.setItem(TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
+    }
+  } catch {
+    // Ignore storage quota or access errors in restricted iframe/sandbox
+  }
+};
+
+/**
+ * Helper to handle fetch with JSON parsing, Authorization header, and error wrapping
  */
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  const headers = {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
     Pragma: 'no-cache',
     'X-Requested-With': 'XMLHttpRequest',
-    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...((options.headers as Record<string, string>) || {}),
   };
 
   const response = await fetch(url, {
     ...options,
     headers,
     cache: 'no-store',
-    credentials: 'include', // Ensures HTTP-only auth cookies are sent
+    credentials: 'include', // Ensures HTTP-only auth cookies are sent where supported
   });
 
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
     if (response.status === 401 && typeof window !== 'undefined') {
+      setStoredToken(null);
       window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { endpoint } }));
     }
     throw new Error(data.message || `Request failed with status ${response.status}`);
@@ -244,13 +276,17 @@ export const weddingService = {
 
 export const adminService = {
   login: async (email: string, password: string) => {
-    return apiRequest<{ success: boolean; message?: string; data: { admin: { name: string; email: string; role: string } } }>(
-      '/auth/login',
-      {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      }
-    );
+    return apiRequest<{
+      success: boolean;
+      message?: string;
+      data: {
+        token?: string;
+        admin: { name: string; email: string; role: string };
+      };
+    }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
   },
 
   logout: async () => {
@@ -316,7 +352,10 @@ export const adminService = {
     return apiRequest<{ success: boolean }>(`/admin/guests/${id}`, { method: 'DELETE' });
   },
 
-  exportGuestsCSVUrl: () => `${API_BASE}/admin/guests/export`,
+  exportGuestsCSVUrl: () => {
+    const token = getStoredToken();
+    return `${API_BASE}/admin/guests/export${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+  },
 
   // 3. Events
   createEvent: async (event: Partial<WeddingEventItem>) => {
@@ -352,17 +391,21 @@ export const adminService = {
 
   uploadMedia: async (formData: FormData) => {
     const url = `${API_BASE}/admin/media/upload`;
+    const token = getStoredToken();
+    const headers: Record<string, string> = {
+      'X-Requested-With': 'XMLHttpRequest',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
       credentials: 'include',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-      },
+      headers,
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
       if (response.status === 401 && typeof window !== 'undefined') {
+        setStoredToken(null);
         window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { endpoint: '/admin/media/upload' } }));
       }
       throw new Error(data.message || data.error || `Upload failed with status ${response.status}`);
@@ -415,17 +458,21 @@ export const adminService = {
 
   uploadMusicTrack: async (formData: FormData) => {
     const url = `${API_BASE}/admin/music/upload`;
+    const token = getStoredToken();
+    const headers: Record<string, string> = {
+      'X-Requested-With': 'XMLHttpRequest',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
       credentials: 'include',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-      },
+      headers,
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
       if (response.status === 401 && typeof window !== 'undefined') {
+        setStoredToken(null);
         window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { endpoint: '/admin/music/upload' } }));
       }
       throw new Error(data.message || data.error || `Audio upload failed with status ${response.status}`);

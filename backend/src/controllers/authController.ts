@@ -61,11 +61,12 @@ export const authController = {
         { expiresIn: '7d' }
       );
 
-      // Set cookie
+      // Set cookie (supporting modern cross-site fetch with SameSite=None and Secure in production)
+      const isProd = ENV.NODE_ENV === 'production';
       res.cookie('jwt_token', token, {
         httpOnly: true,
-        secure: ENV.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -84,6 +85,7 @@ export const authController = {
       res.json({
         success: true,
         message: 'Logged in successfully',
+        token,
         data: {
           token,
           admin: {
@@ -100,7 +102,12 @@ export const authController = {
   },
 
   logout: async (req: Request, res: Response): Promise<void> => {
-    res.clearCookie('jwt_token');
+    const isProd = ENV.NODE_ENV === 'production';
+    res.clearCookie('jwt_token', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+    });
     res.json({ success: true, message: 'Logged out successfully' });
   },
 

@@ -147,6 +147,11 @@ describe('Admin Security, Authentication & RBAC Test Suite', () => {
       // Passes CSRF check to validator (e.g. 400 validation error, not 403 CSRF)
       expect(res.status).not.toBe(403);
     });
+
+    it('authenticates GET requests via query parameter token for direct downloads', async () => {
+      const res = await request(app).get(`/api/admin/dashboard?token=${superAdminToken}`);
+      expect(res.status).not.toBe(401);
+    });
   });
 
   describe('4. Role-Based Access Control (RBAC) & Hierarchy Enforcement', () => {
