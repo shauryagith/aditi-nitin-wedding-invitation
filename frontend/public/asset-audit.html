@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aditi & Nitin Wedding Assets Audit</title>
+  <style>
+    body { font-family: sans-serif; background: #1a0b10; color: #fff; margin: 0; padding: 20px; }
+    h1 { color: #d4af37; text-align: center; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; }
+    .card { background: #2d111b; border: 2px solid #d4af37; border-radius: 12px; overflow: hidden; padding: 12px; }
+    .card h3 { color: #f5e6cc; margin: 0 0 8px 0; font-size: 14px; word-break: break-all; }
+    .meta { font-size: 12px; color: #d4af37; margin-bottom: 8px; }
+    .img-wrap { width: 100%; height: 320px; background: #000; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden; }
+    .img-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  </style>
+</head>
+<body>
+  <h1>Aditi & Nitin Wedding Assets Catalog (33 Images)</h1>
+  <div class="grid" id="grid"></div>
+
+  <script type="module">
+    const files = [
+      { name: "Gemini_Generated_Image_6rsl0g6rsl0g6rsl.png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.35 MB" },
+      { name: "Gemini_Generated_Image_b3ymbrb3ymbrb3ym (1).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.05 MB" },
+      { name: "Gemini_Generated_Image_b3ymbrb3ymbrb3ym.png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.31 MB" },
+      { name: "Gemini_Generated_Image_evdjl5evdjl5evdj.png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.32 MB" },
+      { name: "Gemini_Generated_Image_mtk13zmtk13zmtk1 (1).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.04 MB" },
+      { name: "Gemini_Generated_Image_mtk13zmtk13zmtk1 (2).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.28 MB" },
+      { name: "Gemini_Generated_Image_mtk13zmtk13zmtk1 (3).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.17 MB" },
+      { name: "Gemini_Generated_Image_mtk13zmtk13zmtk1 (4).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.35 MB" },
+      { name: "Gemini_Generated_Image_mtk13zmtk13zmtk1.png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.48 MB" },
+      { name: "Gemini_Generated_Image_vgpktmvgpktmvgpk (1).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.30 MB" },
+      { name: "Gemini_Generated_Image_vgpktmvgpktmvgpk (2).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.11 MB" },
+      { name: "Gemini_Generated_Image_vgpktmvgpktmvgpk (3).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.16 MB" },
+      { name: "Gemini_Generated_Image_vgpktmvgpktmvgpk (4).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.51 MB" },
+      { name: "Gemini_Generated_Image_vgpktmvgpktmvgpk (5).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.37 MB" },
+      { name: "Gemini_Generated_Image_vgpktmvgpktmvgpk.png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.20 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (1).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.57 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (10).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.47 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (11).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.55 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (12).png", w: 768, h: 1376, ar: "0.56 (Ultra-Portrait)", size: "2.59 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (2).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.13 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (3).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.44 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (4).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.49 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (5).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.18 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (6).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.43 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (7).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "1.91 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (8).png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "1.99 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb (9).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.44 MB" },
+      { name: "Gemini_Generated_Image_wuxbd2wuxbd2wuxb.png", w: 928, h: 1152, ar: "0.81 (Portrait)", size: "2.05 MB" },
+      { name: "Gemini_Generated_Image_y1x1dny1x1dny1x1 (1).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.01 MB" },
+      { name: "Gemini_Generated_Image_y1x1dny1x1dny1x1 (2).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.04 MB" },
+      { name: "Gemini_Generated_Image_y1x1dny1x1dny1x1 (3).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.50 MB" },
+      { name: "Gemini_Generated_Image_y1x1dny1x1dny1x1 (4).png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.01 MB" },
+      { name: "Gemini_Generated_Image_y1x1dny1x1dny1x1.png", w: 1376, h: 768, ar: "1.79 (Landscape)", size: "2.01 MB" }
+    ];
+
+    const grid = document.getElementById('grid');
+    files.forEach((f, idx) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = `item-${idx+1}`;
+      card.innerHTML = `
+        <h3>#${idx+1}: ${f.name}</h3>
+        <div class="meta">${f.w}x${f.h} | ${f.ar} | ${f.size}</div>
+        <div class="img-wrap">
+          <img src="/wedding-assets/${encodeURIComponent(f.name)}" alt="${f.name}" loading="lazy">
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>
