@@ -63,14 +63,14 @@ router.delete('/media/:id', requireRole('MEDIA_MANAGER', 'SUPER_ADMIN'), mediaCo
 router.get('/music', musicController.getTracks);
 router.post(
   '/music/upload',
-  requireRole('MEDIA_MANAGER', 'SUPER_ADMIN'),
+  requireRole('MEDIA_MANAGER', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'),
   uploadRateLimiter,
   uploadAudio.single('audio'),
   musicController.uploadTrack
 );
-router.put('/music/:id', requireRole('MEDIA_MANAGER', 'SUPER_ADMIN'), musicController.updateTrack);
-router.patch('/music/:id/default', requireRole('MEDIA_MANAGER', 'SUPER_ADMIN'), musicController.setDefaultTrack);
-router.delete('/music/:id', requireRole('MEDIA_MANAGER', 'SUPER_ADMIN'), musicController.deleteTrack);
+router.put('/music/:id', requireRole('MEDIA_MANAGER', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'), musicController.updateTrack);
+router.patch('/music/:id/default', requireRole('MEDIA_MANAGER', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'), musicController.setDefaultTrack);
+router.delete('/music/:id', requireRole('MEDIA_MANAGER', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'), musicController.deleteTrack);
 
 // 7. QR Code Management
 router.get('/qr', qrController.getQRCodes);

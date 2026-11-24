@@ -486,24 +486,34 @@ export const adminService = {
       throw new Error(data.message || data.error || `Audio upload failed with status ${response.status}`);
     }
     weddingSyncManager.notifyUpdate('/admin/music');
+    weddingSyncManager.notifyUpdate('music');
     return data;
   },
 
   updateMusicTrack: async (id: string, data: Partial<MusicTrackItem>) => {
-    return apiRequest<{ success: boolean; data: MusicTrackItem }>(`/admin/music/${id}`, {
+    const res = await apiRequest<{ success: boolean; data: MusicTrackItem }>(`/admin/music/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    weddingSyncManager.notifyUpdate('/admin/music');
+    weddingSyncManager.notifyUpdate('music');
+    return res;
   },
 
   setDefaultMusicTrack: async (id: string) => {
-    return apiRequest<{ success: boolean; data: MusicTrackItem }>(`/admin/music/${id}/default`, {
+    const res = await apiRequest<{ success: boolean; data: MusicTrackItem }>(`/admin/music/${id}/default`, {
       method: 'PATCH',
     });
+    weddingSyncManager.notifyUpdate('/admin/music');
+    weddingSyncManager.notifyUpdate('music');
+    return res;
   },
 
   deleteMusicTrack: async (id: string) => {
-    return apiRequest<{ success: boolean }>(`/admin/music/${id}`, { method: 'DELETE' });
+    const res = await apiRequest<{ success: boolean }>(`/admin/music/${id}`, { method: 'DELETE' });
+    weddingSyncManager.notifyUpdate('/admin/music');
+    weddingSyncManager.notifyUpdate('music');
+    return res;
   },
 
   // 7. QR Codes

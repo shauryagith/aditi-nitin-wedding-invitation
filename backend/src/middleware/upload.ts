@@ -43,16 +43,18 @@ export const uploadImage = multer({
 export const uploadAudio = multer({
   storage: memoryStorage,
   limits: {
-    fileSize: 15 * 1024 * 1024, // 15MB maximum audio size
+    fileSize: 50 * 1024 * 1024, // 50MB maximum audio size for full-length wedding tracks
   },
   fileFilter: (req, file, cb) => {
+    const mime = file.mimetype.toLowerCase();
     if (
-      ALLOWED_AUDIO_MIMES.includes(file.mimetype.toLowerCase()) ||
-      file.originalname.match(/\.(mp3|m4a|aac|ogg|wav)$/i)
+      ALLOWED_AUDIO_MIMES.includes(mime) ||
+      mime.startsWith('audio/') ||
+      file.originalname.match(/\.(mp3|m4a|aac|ogg|wav|webm|flac|wma)$/i)
     ) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid audio format. Supported formats: MP3, M4A, AAC, OGG, WAV.'));
+      cb(new Error('Invalid audio format. Supported formats: MP3, M4A, AAC, OGG, WAV, WEBM, FLAC.'));
     }
   },
 });

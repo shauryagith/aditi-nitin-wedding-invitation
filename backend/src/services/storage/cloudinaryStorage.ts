@@ -136,11 +136,14 @@ export class CloudinaryStorageService implements IStorageService {
     options?: UploadAudioOptions
   ): Promise<UploadResult> {
     const folder = options?.folder || 'wedding/music';
+    const ext = originalName.split('.').pop()?.toLowerCase() || 'mp3';
+    const safeFormat = ['mp3', 'wav', 'm4a', 'aac', 'ogg'].includes(ext) ? ext : 'mp3';
 
-    // Cloudinary manages audio under the 'video' resource type
+    // Cloudinary manages audio streaming under the 'video' resource type
     const uploadOptions: Record<string, any> = {
       folder,
-      resource_type: 'auto',
+      resource_type: 'video',
+      format: safeFormat,
       tags: ['wedding-music', 'aditi-nitin', ...(options?.tags || [])],
       context: {
         title: options?.title || originalName,
@@ -149,23 +152,30 @@ export class CloudinaryStorageService implements IStorageService {
       },
     };
 
-    const result = await this.uploadBufferStream(fileBuffer, uploadOptions, 30000);
+    try {
+      const result = await this.uploadBufferStream(fileBuffer, uploadOptions, 60000);
 
-    return {
-      url: result.secure_url,
-      secureUrl: result.secure_url,
-      publicId: result.public_id,
-      filename: `${result.public_id.split('/').pop()}.${result.format || 'mp3'}`,
-      originalName,
-      mimeType: result.format ? `audio/${result.format}` : mimeType,
-      size: result.bytes || fileBuffer.length,
-      format: result.format,
-      thumbnailUrl: '',
-      webpUrl: '',
-      resourceType: 'video',
-      folder,
-      storageProvider: 'cloudinary',
-    };
+      return {
+        url: result.secure_url,
+        secureUrl: result.secure_url,
+        publicId: result.public_id,
+        filename: `${result.public_id.split('/').pop()}.${result.format || safeFormat}`,
+        originalName,
+        mimeType: result.format ? `audio/${result.format}` : (mimeType || 'audio/mpeg'),
+        size: result.bytes || fileBuffer.length,
+        format: result.format || safeFormat,
+        thumbnailUrl: '',
+        webpUrl: '',
+        resourceType: 'video',
+        folder,
+        storageProvider: 'cloudinary',
+      };
+    } catch (err: any) {
+      console.warn(`[Cloudinary Audio Upload] Cloudinary upload notice (${err.message}). Falling back to LocalStorageService.`);
+      const { LocalStorageService } = await import('./localStorage.js');
+      const localService = new LocalStorageService();
+      return await localService.uploadAudio(fileBuffer, originalName, mimeType, options);
+    }
   }
 
   async deleteAsset(

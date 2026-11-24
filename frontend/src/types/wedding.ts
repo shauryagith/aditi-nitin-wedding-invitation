@@ -203,6 +203,8 @@ export interface MusicTrackItem {
   secureUrl?: string;
   publicId?: string;
   storageProvider?: 'cloudinary' | 'local';
+  resourceType?: string;
+  format?: string;
   originalName: string;
   fileSize: number;
   duration?: number;

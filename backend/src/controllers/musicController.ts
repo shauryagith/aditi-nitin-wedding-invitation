@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import path from 'path';
 import { MusicTrack } from '../models/MusicTrack.js';
+import { Wedding } from '../models/Wedding.js';
 import { ActivityLog } from '../models/ActivityLog.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { musicTrackSchema } from '../validators/schemas.js';
@@ -65,15 +66,19 @@ export const musicController = {
       const loop = req.body.loop !== undefined ? req.body.loop === 'true' || req.body.loop === true : true;
       const isDefault = req.body.isDefault === 'true' || req.body.isDefault === true;
 
-      if (isDefault) {
-        await MusicTrack.updateMany({}, { isDefault: false });
-      }
-
       const uploadResult = await storageService.uploadAudio(file.buffer, file.originalname, file.mimetype, {
         title,
         artist,
         folder: 'wedding/music',
       });
+
+      if (isDefault) {
+        await MusicTrack.updateMany({}, { isDefault: false });
+        await Wedding.findOneAndUpdate(
+          {},
+          { $set: { 'websiteSettings.musicUrl': uploadResult.secureUrl } }
+        ).catch(() => null);
+      }
 
       const track = await MusicTrack.create({
         title,
@@ -163,6 +168,11 @@ export const musicController = {
         return;
       }
 
+      await Wedding.findOneAndUpdate(
+        {},
+        { $set: { 'websiteSettings.musicUrl': track.secureUrl || track.fileUrl } }
+      ).catch(() => null);
+
       await ActivityLog.create({
         adminId: req.admin?.id,
         adminEmail: req.admin?.email || 'admin@aditinitinwedding.com',
@@ -194,6 +204,23 @@ export const musicController = {
       if (!track) {
         res.status(404).json({ success: false, message: 'Track not found' });
         return;
+      }
+
+      if (track.isDefault) {
+        const nextTrack = await MusicTrack.findOne({ _id: { $ne: id }, isActive: true }).sort({ createdAt: -1 });
+        if (nextTrack) {
+          nextTrack.isDefault = true;
+          await nextTrack.save();
+          await Wedding.findOneAndUpdate(
+            {},
+            { $set: { 'websiteSettings.musicUrl': nextTrack.secureUrl || nextTrack.fileUrl } }
+          ).catch(() => null);
+        } else {
+          await Wedding.findOneAndUpdate(
+            {},
+            { $set: { 'websiteSettings.musicUrl': 'https://cdn.pixabay.com/download/audio/2022/05/16/audio_db65955635.mp3' } }
+          ).catch(() => null);
+        }
       }
 
       // Delete from storage provider
