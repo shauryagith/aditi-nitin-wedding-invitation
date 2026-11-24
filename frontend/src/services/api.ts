@@ -464,11 +464,14 @@ export const adminService = {
     return apiRequest<{ success: boolean; data: MusicTrackItem[] }>('/admin/music');
   },
 
-  uploadMusicTrack: async (formData: FormData) => {
+  uploadMusicTrack: async (formData: FormData, customCorrelationId?: string) => {
     const url = `${API_BASE}/admin/music/upload`;
     const token = getStoredToken();
+    const correlationId =
+      customCorrelationId || `cid-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
     const headers: Record<string, string> = {
       'X-Requested-With': 'XMLHttpRequest',
+      'X-Correlation-ID': correlationId,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
@@ -479,6 +482,8 @@ export const adminService = {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for large audio files
+
+        console.log(`[UploadDiagnostic][${correlationId}][Frontend] Initiating upload attempt ${attempt + 1}/${maxRetries + 1} to ${url}`);
 
         const response = await fetch(url, {
           method: 'POST',
@@ -493,6 +498,7 @@ export const adminService = {
         const data = await response.json().catch(() => ({}));
         if (!response.ok || data.success === false) {
           const errMsg = data.message || data.error || `Audio upload failed with status ${response.status}`;
+          console.error(`[UploadDiagnostic][${correlationId}][Frontend] Upload failed with status ${response.status}:`, errMsg);
           
           if (response.status === 401 && typeof window !== 'undefined') {
             setStoredToken(null);
@@ -503,6 +509,7 @@ export const adminService = {
           if (response.status >= 400 && response.status < 500) {
             const clientErr: any = new Error(errMsg);
             clientErr.isClientError = true;
+            clientErr.correlationId = correlationId;
             throw clientErr;
           }
 
@@ -512,12 +519,15 @@ export const adminService = {
             continue;
           }
 
-          throw new Error(errMsg);
+          const apiErr: any = new Error(errMsg);
+          apiErr.correlationId = correlationId;
+          throw apiErr;
         }
 
+        console.log(`[UploadDiagnostic][${correlationId}][Stage 11: API success response returned]`, data);
         weddingSyncManager.notifyUpdate('/admin/music');
         weddingSyncManager.notifyUpdate('music');
-        return data;
+        return { ...data, correlationId };
       } catch (err: any) {
         lastError = err;
         if (err.isClientError) {
@@ -526,6 +536,7 @@ export const adminService = {
         }
         if (err.name === 'AbortError') {
           lastError = new Error('Upload timed out after 90 seconds. The server might be waking up or file is very large.');
+          lastError.correlationId = correlationId;
           throw lastError;
         }
         if (attempt < maxRetries) {

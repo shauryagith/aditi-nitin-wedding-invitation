@@ -54,15 +54,38 @@ export const musicController = {
 
   uploadTrack: async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     let uploadResult: any = null;
+    const correlationId =
+      (req as any).correlationId ||
+      (req.headers['x-correlation-id'] as string) ||
+      `music-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+    res.setHeader('X-Correlation-ID', correlationId);
+
     try {
       const file = req.file;
       if (!file) {
-        res.status(400).json({ success: false, message: 'Audio file is required.' });
+        console.error(`[UploadDiagnostic][${correlationId}][FAILED at Stage 5: Audio file received] No file in request payload.`);
+        res.status(400).json({
+          success: false,
+          correlationId,
+          stage: 'Stage 5: Audio file received',
+          message: 'Audio file is required.',
+        });
         return;
       }
 
+      console.log(
+        `[UploadDiagnostic][${correlationId}][Stage 5: Audio file received] File: ${file.originalname}, MIME: ${file.mimetype}, Size: ${file.size} bytes`
+      );
+
       if (!file.buffer || file.buffer.length === 0) {
-        res.status(400).json({ success: false, message: 'Audio file cannot be empty (0 bytes).' });
+        console.error(`[UploadDiagnostic][${correlationId}][FAILED at Stage 6: File validation passed] Empty file buffer (0 bytes).`);
+        res.status(400).json({
+          success: false,
+          correlationId,
+          stage: 'Stage 6: File validation passed',
+          message: 'Audio file cannot be empty (0 bytes).',
+        });
         return;
       }
 
@@ -74,15 +97,26 @@ export const musicController = {
       const isJpeg = buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
       const isGif = buf.length >= 4 && buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38;
       const textPreview = buf.subarray(0, 100).toString('utf8').trim().toLowerCase();
-      const isHtmlOrScript = textPreview.startsWith('<!doctype') || textPreview.startsWith('<html') || textPreview.startsWith('<?php') || textPreview.startsWith('#!/');
+      const isHtmlOrScript =
+        textPreview.startsWith('<!doctype') ||
+        textPreview.startsWith('<html') ||
+        textPreview.startsWith('<?php') ||
+        textPreview.startsWith('#!/');
 
       if (isExe || isElf || isPng || isJpeg || isGif || isHtmlOrScript) {
+        console.error(
+          `[UploadDiagnostic][${correlationId}][FAILED at Stage 6: File validation passed] Disguised or corrupted non-audio binary detected.`
+        );
         res.status(400).json({
           success: false,
+          correlationId,
+          stage: 'Stage 6: File validation passed',
           message: 'Invalid audio file content. The uploaded file is corrupted or not a valid audio format.',
         });
         return;
       }
+
+      console.log(`[UploadDiagnostic][${correlationId}][Stage 6: File validation passed] Binary inspection passed.`);
 
       const title = req.body.title || path.parse(file.originalname).name;
       const artist = req.body.artist || 'Traditional Shehnai & Sitar';
@@ -91,11 +125,21 @@ export const musicController = {
       const loop = req.body.loop !== undefined ? req.body.loop === 'true' || req.body.loop === true : true;
       const isDefault = req.body.isDefault === 'true' || req.body.isDefault === true;
 
+      console.log(
+        `[UploadDiagnostic][${correlationId}][Stage 7: Cloudinary upload started] Provider: ${storageService.providerName}, Folder: wedding/music`
+      );
+
       uploadResult = await storageService.uploadAudio(file.buffer, file.originalname, file.mimetype, {
         title,
         artist,
         folder: 'wedding/music',
       });
+
+      console.log(
+        `[UploadDiagnostic][${correlationId}][Stage 8: Cloudinary upload succeeded] Public ID: ${uploadResult.publicId}, Provider: ${uploadResult.storageProvider}`
+      );
+
+      console.log(`[UploadDiagnostic][${correlationId}][Stage 9: MongoDB save started]`);
 
       if (isDefault) {
         await MusicTrack.updateMany({}, { isDefault: false });
@@ -122,6 +166,8 @@ export const musicController = {
         isActive: true,
       });
 
+      console.log(`[UploadDiagnostic][${correlationId}][Stage 10: MongoDB save succeeded] Track ID: ${track._id}`);
+
       await ActivityLog.create({
         adminId: req.admin?.id,
         adminEmail: req.admin?.email || 'admin@aditinitinwedding.com',
@@ -139,15 +185,25 @@ export const musicController = {
         data: track,
       });
 
+      console.log(`[UploadDiagnostic][${correlationId}][Stage 11: API success response returned]`);
+
       res.status(201).json({
         success: true,
+        correlationId,
+        stage: 'Stage 11: API success response returned',
         message: `Background music uploaded successfully via ${storageService.providerName}`,
         data: track,
       });
     } catch (err: any) {
+      console.error(
+        `[UploadDiagnostic][${correlationId}][FAILED at Backend Processing] Error: ${err.message}`
+      );
+
       // Safe cleanup of orphaned Cloudinary asset if database save or subsequent logic fails
       if (uploadResult?.publicId && uploadResult?.storageProvider === 'cloudinary') {
-        console.warn(`[Music Upload Cleanup] Rolling back Cloudinary asset (${uploadResult.publicId}) after database error`);
+        console.warn(
+          `[UploadDiagnostic][${correlationId}][Music Upload Cleanup] Rolling back Cloudinary asset (${uploadResult.publicId}) after database error`
+        );
         await storageService.deleteAsset(uploadResult.publicId, 'video').catch((cleanErr) => {
           console.error(`[Music Upload Cleanup] Failed to delete orphaned Cloudinary asset:`, cleanErr);
         });

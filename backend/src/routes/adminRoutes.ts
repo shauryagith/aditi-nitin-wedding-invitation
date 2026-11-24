@@ -65,7 +65,40 @@ router.post(
   '/music/upload',
   requireRole('MEDIA_MANAGER', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'),
   uploadRateLimiter,
-  uploadAudio.single('audio'),
+  (req, res, next) => {
+    const correlationId =
+      (req.headers['x-correlation-id'] as string) ||
+      `music-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    (req as any).correlationId = correlationId;
+    res.setHeader('X-Correlation-ID', correlationId);
+    console.log(`[UploadDiagnostic][${correlationId}][Stage 1: Request received] Path: /api/admin/music/upload, Method: POST`);
+    console.log(`[UploadDiagnostic][${correlationId}][Stage 2: Authentication passed] Admin ID: ${(req as any).admin?.id}, Email: ${(req as any).admin?.email}`);
+    console.log(`[UploadDiagnostic][${correlationId}][Stage 3: Admin authorization passed] Role: ${(req as any).admin?.role}`);
+    next();
+  },
+  (req, res, next) => {
+    uploadAudio.single('audio')(req, res, (err: any) => {
+      const correlationId = (req as any).correlationId || 'unknown';
+      if (err) {
+        let msg = err.message || 'Multipart parsing failed';
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+          msg = `Unexpected upload field "${err.field || ''}". File must be uploaded under the expected field name.`;
+        } else if (err.code === 'LIMIT_FILE_SIZE') {
+          msg = 'File size exceeds maximum allowed limit.';
+        }
+        console.error(`[UploadDiagnostic][${correlationId}][FAILED at Stage 4: Multipart parsing completed] Error: ${msg}`);
+        return res.status(400).json({
+          success: false,
+          correlationId,
+          stage: 'Stage 4: Multipart parsing completed',
+          message: msg,
+          code: err.code,
+        });
+      }
+      console.log(`[UploadDiagnostic][${correlationId}][Stage 4: Multipart parsing completed] Field: audio, Size: ${req.file?.size || 0} bytes`);
+      next();
+    });
+  },
   musicController.uploadTrack
 );
 router.put('/music/:id', requireRole('MEDIA_MANAGER', 'CONTENT_MANAGER', 'ADMIN', 'SUPER_ADMIN'), musicController.updateTrack);

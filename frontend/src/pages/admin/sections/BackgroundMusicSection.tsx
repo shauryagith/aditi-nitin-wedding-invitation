@@ -19,6 +19,8 @@ import { adminService } from '../../../services/api';
 import { weddingSyncManager } from '../../../utils/dataSync';
 import { MusicTrackItem } from '../../../types/wedding';
 
+export type UploadState = 'idle' | 'selecting' | 'validating' | 'uploading' | 'saving' | 'success' | 'error';
+
 interface BackgroundMusicSectionProps {
   onRefreshStats: () => void;
 }
@@ -31,9 +33,12 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
 }) => {
   const [tracks, setTracks] = useState<MusicTrackItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [uploadState, setUploadState] = useState<UploadState>('idle');
+  const [correlationId, setCorrelationId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const isBusy = uploadState === 'validating' || uploadState === 'uploading' || uploadState === 'saving';
 
   // Staged File Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -120,11 +125,13 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
    * 4. Magic bytes inspection (rejects disguised executable/image files)
    */
   const validateAndStageFile = async (file: File) => {
+    setUploadState('validating');
     setErrorMsg(null);
 
     // 1. Check empty file
     if (file.size === 0) {
       setErrorMsg('The selected audio file is empty (0 bytes). Please choose a valid file.');
+      setUploadState('error');
       return;
     }
 
@@ -132,6 +139,7 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
     if (file.size > MAX_AUDIO_SIZE_BYTES) {
       const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
       setErrorMsg(`Audio file size (${sizeMb} MB) exceeds the maximum allowed 50 MB limit.`);
+      setUploadState('error');
       return;
     }
 
@@ -142,6 +150,7 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
 
     if (!hasValidExt && !hasAudioMime) {
       setErrorMsg('Unsupported format. Please select an audio file (MP3, WAV, M4A, AAC, OGG, FLAC, WEBM).');
+      setUploadState('error');
       return;
     }
 
@@ -159,6 +168,7 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
 
       if (isExe || isElf || isPng || isJpeg || isGif) {
         setErrorMsg('The selected file does not appear to be a valid audio file. Corrupted or disguised files are not supported.');
+        setUploadState('error');
         return;
       }
     } catch {
@@ -173,6 +183,7 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
     const previewUrl = URL.createObjectURL(file);
     setStagedPreviewUrl(previewUrl);
     setSelectedFile(file);
+    setUploadState('selecting');
 
     const cleanTitle = file.name
       .replace(/\.[^/.]+$/, '')
@@ -188,6 +199,9 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
     }
     setSelectedFile(null);
     setTrackTitle('');
+    setCorrelationId(null);
+    setErrorMsg(null);
+    setUploadState('idle');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -219,18 +233,25 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
     setIsDragging(false);
   };
 
-  const handleUploadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (uploading) return;
+  const handleUploadSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (isBusy) return;
 
     if (!selectedFile) {
       setErrorMsg('Please select an audio file first.');
+      setUploadState('error');
       return;
     }
 
-    setUploading(true);
+    const cid = `music-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    setCorrelationId(cid);
+    setUploadState('uploading');
     setErrorMsg(null);
     setSuccessMsg(null);
+
+    const savingTimer = setTimeout(() => {
+      setUploadState((curr) => (curr === 'uploading' ? 'saving' : curr));
+    }, 1200);
 
     const formData = new FormData();
     formData.append('audio', selectedFile);
@@ -240,22 +261,29 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
     formData.append('isDefault', setAsActive ? 'true' : 'false');
 
     try {
-      const res = await adminService.uploadMusicTrack(formData);
+      const res = await adminService.uploadMusicTrack(formData, cid);
+      clearTimeout(savingTimer);
       if (res && res.success === false) {
         throw new Error(res.message || 'Audio upload failed.');
       }
       const uploadedTitle = trackTitle.trim() || selectedFile.name.replace(/\.[^/.]+$/, '');
       setSuccessMsg(`"${uploadedTitle}" uploaded successfully and set as ${setAsActive ? 'Active Background Music' : 'Library Track'}!`);
+      setUploadState('success');
       handleClearStaged();
       await fetchTracks(false);
+      console.log(`[UploadDiagnostic][${res?.correlationId || cid}][Stage 12: Admin music list refreshed]`);
       onRefreshStats();
-      setTimeout(() => setSuccessMsg(null), 8000);
+      setTimeout(() => {
+        setSuccessMsg(null);
+        setUploadState('idle');
+      }, 8000);
     } catch (err: any) {
-      console.error('Audio upload failed:', err);
+      clearTimeout(savingTimer);
+      console.error(`[UploadDiagnostic][${cid}][Frontend Upload Error]:`, err);
       // Preserve the staged file so the admin can retry without re-selecting
+      setUploadState('error');
+      setCorrelationId(err.correlationId || cid);
       setErrorMsg(err.message || 'Audio upload failed. Please verify the file is a valid audio format and the server is connected.');
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -332,28 +360,70 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
         type="file"
         accept="audio/*,.mp3,.m4a,.aac,.ogg,.wav,.flac"
         onChange={handleInputChange}
-        disabled={uploading}
+        disabled={isBusy}
         className="hidden"
       />
 
       {/* Notifications */}
-      {uploading && (
+      {isBusy && (
         <div className="p-4 rounded-xl bg-gold-500/15 border border-gold-500/40 text-gold-300 text-sm flex items-center gap-3 animate-pulse shadow-lg">
           <RefreshCw className="w-5 h-5 animate-spin text-gold-400 shrink-0" />
-          <div>
-            <p className="font-semibold text-white">Uploading track to Cloud Storage...</p>
-            <p className="text-xs text-gold-400/90 mt-0.5">Processing audio and creating high-quality streaming URL. Please wait a moment.</p>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <p className="font-semibold text-white">
+                {uploadState === 'validating' && 'Validating Audio File...'}
+                {uploadState === 'uploading' && 'Uploading Track to Backend...'}
+                {uploadState === 'saving' && 'Processing Cloudinary & Database Sync...'}
+              </p>
+              {correlationId && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 text-gold-400 border border-gold-500/30">
+                  ID: {correlationId}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gold-400/90 mt-0.5">
+              {uploadState === 'validating' && 'Verifying audio integrity, extensions, and audio header magic bytes.'}
+              {uploadState === 'uploading' && 'Streaming multipart audio payload to server.'}
+              {uploadState === 'saving' && 'Uploading high-fidelity audio to Cloudinary CDN and persisting in MongoDB Atlas.'}
+            </p>
           </div>
         </div>
       )}
 
       {errorMsg && (
         <div className="p-4 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-sm flex items-start justify-between gap-3 shadow-lg">
-          <div className="flex items-start gap-2.5">
+          <div className="flex items-start gap-2.5 flex-1">
             <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold text-white">Upload Error</p>
-              <p className="text-xs text-rose-200 mt-0.5">{errorMsg}</p>
+            <div className="flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-semibold text-white">Upload Error</p>
+                {correlationId && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 text-rose-300 border border-rose-500/30">
+                    ID: {correlationId}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-rose-200 mt-1">{errorMsg}</p>
+              {selectedFile && (
+                <div className="mt-2.5 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleUploadSubmit()}
+                    disabled={isBusy}
+                    className="px-3 py-1.5 rounded-lg bg-rose-500/30 hover:bg-rose-500/50 text-white font-semibold text-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Retry Upload</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearStaged}
+                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 font-semibold text-xs transition cursor-pointer"
+                  >
+                    Clear Staged File
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           <button
@@ -505,20 +575,24 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
                 <button
                   type="button"
                   onClick={handleClearStaged}
-                  disabled={uploading}
-                  className="px-4 py-2 rounded-xl border border-white/20 text-gray-300 hover:text-white text-xs font-semibold transition"
+                  disabled={isBusy}
+                  className="px-4 py-2 rounded-xl border border-white/20 text-gray-300 hover:text-white text-xs font-semibold transition disabled:opacity-40"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={uploading}
-                  className="flex items-center gap-2 px-6 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-600 text-burgundy-950 font-bold text-xs tracking-wider shadow-lg transition disabled:opacity-50"
+                  disabled={isBusy || !selectedFile}
+                  className="flex items-center gap-2 px-6 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-600 text-burgundy-950 font-bold text-xs tracking-wider shadow-lg transition disabled:opacity-50 cursor-pointer"
                 >
-                  {uploading ? (
+                  {isBusy ? (
                     <>
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Uploading to Cloud...</span>
+                      <span>
+                        {uploadState === 'validating' && 'Validating...'}
+                        {uploadState === 'uploading' && 'Uploading Stream...'}
+                        {uploadState === 'saving' && 'Saving to Cloud & DB...'}
+                      </span>
                     </>
                   ) : (
                     <>
