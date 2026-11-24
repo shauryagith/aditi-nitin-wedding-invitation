@@ -138,7 +138,7 @@ export const WEDDING_CONFIG: WeddingConfig = {
   music: {
     title: 'Mangalyam Tantunanena (Shehnai & Sitar Traditional)',
     artist: 'Royal Indian Wedding Symphony',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/16/audio_db65955635.mp3?filename=indian-flute-and-sitar-peace-111893.mp3',
+    audioUrl: '/music/royal-wedding-shehnai.wav',
   },
   seo: {
     title: 'Aditi ❤️ Nitin – Royal Indian Wedding Invitation',

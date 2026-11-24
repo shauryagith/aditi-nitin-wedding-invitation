@@ -158,19 +158,19 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
       if (res && res.success === false) {
         throw new Error(res.message || 'Audio upload failed.');
       }
-      setSuccessMsg(`"${trackTitle}" uploaded and saved successfully!`);
+      const uploadedTitle = trackTitle.trim() || selectedFile.name.replace(/\.[^/.]+$/, '');
+      setSuccessMsg(`"${uploadedTitle}" uploaded successfully and set as ${setAsActive ? 'Active Background Music' : 'Library Track'}!`);
       setSelectedFile(null);
       setTrackTitle('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-      fetchTracks();
+      await fetchTracks();
       onRefreshStats();
-      setTimeout(() => setSuccessMsg(null), 5000);
+      setTimeout(() => setSuccessMsg(null), 8000);
     } catch (err: any) {
       console.error('Audio upload failed:', err);
-      setErrorMsg(err.message || 'Audio upload failed. Please verify file format and size.');
-      setTimeout(() => setErrorMsg(null), 7000);
+      setErrorMsg(err.message || 'Audio upload failed. Please verify the file is a valid audio format and the server is connected.');
     } finally {
       setUploading(false);
     }
@@ -254,17 +254,53 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
       />
 
       {/* Notifications */}
+      {uploading && (
+        <div className="p-4 rounded-xl bg-gold-500/15 border border-gold-500/40 text-gold-300 text-sm flex items-center gap-3 animate-pulse shadow-lg">
+          <RefreshCw className="w-5 h-5 animate-spin text-gold-400 shrink-0" />
+          <div>
+            <p className="font-semibold text-white">Uploading track to Cloud Storage...</p>
+            <p className="text-xs text-gold-400/90 mt-0.5">Processing audio and creating high-quality streaming URL. Please wait a moment.</p>
+          </div>
+        </div>
+      )}
+
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-sm flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{errorMsg}</span>
+        <div className="p-4 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-sm flex items-start justify-between gap-3 shadow-lg">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-white">Upload Error</p>
+              <p className="text-xs text-rose-200 mt-0.5">{errorMsg}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErrorMsg(null)}
+            className="p-1 rounded text-rose-400 hover:text-white hover:bg-rose-500/20 transition cursor-pointer"
+            title="Dismiss error"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-sm flex items-center gap-2">
-          <Check className="w-4 h-4 shrink-0" />
-          <span>{successMsg}</span>
+        <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-sm flex items-start justify-between gap-3 shadow-lg">
+          <div className="flex items-start gap-2.5">
+            <Check className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-white">Music Uploaded Successfully</p>
+              <p className="text-xs text-emerald-200 mt-0.5">{successMsg}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessMsg(null)}
+            className="p-1 rounded text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition cursor-pointer"
+            title="Dismiss notice"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 

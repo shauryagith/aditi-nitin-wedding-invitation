@@ -471,23 +471,54 @@ export const adminService = {
       'X-Requested-With': 'XMLHttpRequest',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-      credentials: 'include',
-      headers,
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.success === false) {
-      if (response.status === 401 && typeof window !== 'undefined') {
-        setStoredToken(null);
-        window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { endpoint: '/admin/music/upload' } }));
+
+    let lastError: any = null;
+    const maxRetries = 2;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for large audio files
+
+        const response = await fetch(url, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+          headers,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.success === false) {
+          if (response.status === 401 && typeof window !== 'undefined') {
+            setStoredToken(null);
+            window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { endpoint: '/admin/music/upload' } }));
+          }
+          if ([502, 503, 504].includes(response.status) && attempt < maxRetries) {
+            // Render cold start retry
+            await new Promise((r) => setTimeout(r, 2000));
+            continue;
+          }
+          throw new Error(data.message || data.error || `Audio upload failed with status ${response.status}`);
+        }
+
+        weddingSyncManager.notifyUpdate('/admin/music');
+        weddingSyncManager.notifyUpdate('music');
+        return data;
+      } catch (err: any) {
+        lastError = err;
+        if (err.name === 'AbortError') {
+          lastError = new Error('Upload timed out after 90 seconds. The server might be waking up or file is very large.');
+        }
+        if (attempt < maxRetries && err.name !== 'AbortError') {
+          await new Promise((r) => setTimeout(r, 2000));
+        }
       }
-      throw new Error(data.message || data.error || `Audio upload failed with status ${response.status}`);
     }
-    weddingSyncManager.notifyUpdate('/admin/music');
-    weddingSyncManager.notifyUpdate('music');
-    return data;
+
+    throw lastError || new Error('Audio upload failed.');
   },
 
   updateMusicTrack: async (id: string, data: Partial<MusicTrackItem>) => {

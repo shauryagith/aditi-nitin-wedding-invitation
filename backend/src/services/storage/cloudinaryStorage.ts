@@ -1,5 +1,6 @@
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import { Readable } from 'stream';
+import path from 'path';
 import { ENV } from '../../config/env.js';
 import {
   IStorageService,
@@ -137,13 +138,13 @@ export class CloudinaryStorageService implements IStorageService {
   ): Promise<UploadResult> {
     const folder = options?.folder || 'wedding/music';
     const ext = originalName.split('.').pop()?.toLowerCase() || 'mp3';
-    const safeFormat = ['mp3', 'wav', 'm4a', 'aac', 'ogg'].includes(ext) ? ext : 'mp3';
+    const cleanPublicId = `wedding_audio_${Date.now()}_${path.parse(originalName).name.toLowerCase().replace(/[^a-z0-9_-]/g, '_')}`;
 
     // Cloudinary manages audio streaming under the 'video' resource type
     const uploadOptions: Record<string, any> = {
       folder,
+      public_id: cleanPublicId,
       resource_type: 'video',
-      format: safeFormat,
       tags: ['wedding-music', 'aditi-nitin', ...(options?.tags || [])],
       context: {
         title: options?.title || originalName,
@@ -152,21 +153,40 @@ export class CloudinaryStorageService implements IStorageService {
       },
     };
 
+    // Only set format if it's a standard web audio container
+    if (['mp3', 'm4a', 'aac', 'ogg', 'wav'].includes(ext)) {
+      uploadOptions.format = ext;
+    }
+
     try {
-      const result = await this.uploadBufferStream(fileBuffer, uploadOptions, 60000);
+      let result: UploadApiResponse;
+      try {
+        result = await this.uploadBufferStream(fileBuffer, uploadOptions, 60000);
+      } catch (videoErr: any) {
+        console.warn(`[Cloudinary Video Upload] Video resource_type notice: ${videoErr.message}. Retrying with auto resource_type.`);
+        // Retry with auto resource_type without explicit format
+        const autoOptions = {
+          folder,
+          public_id: cleanPublicId,
+          resource_type: 'auto',
+          tags: ['wedding-music', 'aditi-nitin', ...(options?.tags || [])],
+          context: uploadOptions.context,
+        };
+        result = await this.uploadBufferStream(fileBuffer, autoOptions, 60000);
+      }
 
       return {
         url: result.secure_url,
         secureUrl: result.secure_url,
         publicId: result.public_id,
-        filename: `${result.public_id.split('/').pop()}.${result.format || safeFormat}`,
+        filename: `${result.public_id.split('/').pop()}.${result.format || ext}`,
         originalName,
         mimeType: result.format ? `audio/${result.format}` : (mimeType || 'audio/mpeg'),
         size: result.bytes || fileBuffer.length,
-        format: result.format || safeFormat,
+        format: result.format || ext,
         thumbnailUrl: '',
         webpUrl: '',
-        resourceType: 'video',
+        resourceType: (result.resource_type === 'raw' ? 'raw' : 'video') as 'image' | 'video' | 'raw',
         folder,
         storageProvider: 'cloudinary',
       };
