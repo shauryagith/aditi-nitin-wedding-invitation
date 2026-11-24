@@ -162,10 +162,10 @@ const WeddingSchema = new Schema<IWedding>(
     groomNameHi: { type: String, default: 'नितिन' },
     groomBio: {
       type: String,
-      default: 'A visionary leader with a heart of gold. Son of Smt. Suman and Shri Lalit Mohan Joshi.',
+      default: 'A visionary leader with a heart of gold. Son of Smt. Suman Joshi and Shri Lalit Mohan Joshi.',
     },
     groomImage: { type: String, default: '/wedding-assets/optimized/nitin-portrait.webp' },
-    groomMother: { type: String, default: 'Smt. Suman' },
+    groomMother: { type: String, default: 'Smt. Suman Joshi' },
     groomFather: { type: String, default: 'Shri Lalit Mohan Joshi' },
 
     weddingDate: { type: String, default: '2026-12-11T19:00:00+05:30' },
@@ -252,7 +252,7 @@ const WeddingSchema = new Schema<IWedding>(
         },
         {
           id: 'fam-2',
-          name: 'Shri Lalit Mohan Joshi & Smt. Suman',
+          name: 'Shri Lalit Mohan Joshi & Smt. Suman Joshi',
           relationship: "Groom's Loving Parents",
           side: 'GROOM',
           description: 'Welcoming Aditi into their family with open arms and immense love.',

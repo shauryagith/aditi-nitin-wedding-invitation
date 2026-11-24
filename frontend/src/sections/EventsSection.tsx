@@ -59,10 +59,10 @@ export const EventsSection: React.FC = () => {
           <OrnamentalDivider color="#D4AF37" className="my-3 scale-90 sm:scale-100" />
 
           {/* View Mode Toggle Buttons */}
-          <div className="mt-6 inline-flex items-center p-1 rounded-full bg-champagne/50 border border-royalGold/40 shadow-sm">
+          <div className="mt-6 inline-flex max-w-full overflow-x-auto items-center p-1 rounded-full bg-champagne/50 border border-royalGold/40 shadow-sm">
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              className={`px-3 xs:px-4 py-1.5 rounded-full text-[11px] xs:text-xs font-semibold flex items-center gap-1 xs:gap-1.5 transition-all whitespace-nowrap ${
                 viewMode === 'grid'
                   ? 'bg-primaryMaroon text-champagne shadow-md'
                   : 'text-primaryMaroon hover:text-darkBrown'
@@ -74,7 +74,7 @@ export const EventsSection: React.FC = () => {
 
             <button
               onClick={() => setViewMode('slider')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              className={`px-3 xs:px-4 py-1.5 rounded-full text-[11px] xs:text-xs font-semibold flex items-center gap-1 xs:gap-1.5 transition-all whitespace-nowrap ${
                 viewMode === 'slider'
                   ? 'bg-primaryMaroon text-champagne shadow-md'
                   : 'text-primaryMaroon hover:text-darkBrown'
@@ -86,7 +86,7 @@ export const EventsSection: React.FC = () => {
 
             <button
               onClick={() => setViewMode('timeline')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              className={`px-3 xs:px-4 py-1.5 rounded-full text-[11px] xs:text-xs font-semibold flex items-center gap-1 xs:gap-1.5 transition-all whitespace-nowrap ${
                 viewMode === 'timeline'
                   ? 'bg-primaryMaroon text-champagne shadow-md'
                   : 'text-primaryMaroon hover:text-darkBrown'

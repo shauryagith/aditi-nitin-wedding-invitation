@@ -75,21 +75,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenShareModal, onReplayWelcom
             : 'bg-gradient-to-b from-deepBurgundy/90 via-deepBurgundy/50 to-transparent py-4 sm:py-5'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           {/* Logo / Monogram: Aditi & Nitin */}
           <a
             href="#hero"
             onClick={(e) => handleLinkClick(e, '#hero')}
-            className="flex items-center gap-2.5 group cursor-pointer"
+            className="flex items-center gap-2 xs:gap-2.5 group cursor-pointer"
           >
-            <div className="w-10 h-10 rounded-full border-2 border-royalGold flex items-center justify-center bg-primaryMaroon shadow-inner group-hover:scale-105 transition-transform">
-              <span className="font-heading font-bold text-royalGold text-xs tracking-wider">A&amp;N</span>
+            <div className="w-8 h-8 xs:w-10 xs:h-10 rounded-full border-2 border-royalGold flex items-center justify-center bg-primaryMaroon shadow-inner group-hover:scale-105 transition-transform flex-shrink-0">
+              <span className="font-heading font-bold text-royalGold text-[10px] xs:text-xs tracking-wider">A&amp;N</span>
             </div>
             <div>
-              <span className="font-script text-2xl sm:text-3xl text-champagne tracking-wide block leading-none">
+              <span className="font-script text-xl xs:text-2xl sm:text-3xl text-champagne tracking-wide block leading-none">
                 {language === 'hi' ? 'अदिति ❤️ नितिन' : 'Aditi & Nitin'}
               </span>
-              <span className="text-[9px] text-royalGold tracking-widest uppercase block mt-0.5 font-semibold">
+              <span className="text-[8px] xs:text-[9px] text-royalGold tracking-widest uppercase block mt-0.5 font-semibold">
                 11 December 2026
               </span>
             </div>
@@ -133,12 +133,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenShareModal, onReplayWelcom
           </div>
 
           {/* Action Buttons (Language, Music, Share, Mobile Menu) */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-1.5 sm:space-x-3">
             {/* Language Toggle */}
             <button
               onClick={toggleLanguage}
               aria-label="Toggle Language"
-              className="px-2.5 py-1.5 rounded-full border border-royalGold/50 bg-primaryMaroon/80 text-champagne hover:text-white hover:bg-primaryMaroon text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+              className="px-2 xs:px-2.5 py-1 xs:py-1.5 rounded-full border border-royalGold/50 bg-primaryMaroon/80 text-champagne hover:text-white hover:bg-primaryMaroon text-[11px] xs:text-xs font-semibold flex items-center gap-1 xs:gap-1.5 transition-all shadow-sm"
             >
               <Globe className="w-3.5 h-3.5 text-royalGold" />
               <span>{language === 'en' ? 'हिन्दी' : 'English'}</span>

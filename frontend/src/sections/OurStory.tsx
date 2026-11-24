@@ -79,7 +79,7 @@ export const OurStory: React.FC = () => {
                     <div className="absolute -inset-1.5 xs:-inset-2.5 sm:-inset-3.5 rounded-3xl border-2 border-dashed border-royalGold/50 -rotate-2 group-hover:rotate-0 transition-transform duration-500 pointer-events-none" />
 
                     {/* Image Box */}
-                    <div className="relative w-64 xs:w-72 sm:w-88 md:w-96 h-72 xs:h-80 sm:h-96 rounded-2xl overflow-hidden border-2 border-royalGold shadow-[0_15px_35px_rgba(0,0,0,0.6)] bg-maroon-950">
+                    <div className="relative w-64 xs:w-72 sm:w-80 md:w-96 max-w-[calc(100vw-3rem)] h-72 xs:h-80 sm:h-96 rounded-2xl overflow-hidden border-2 border-royalGold shadow-[0_15px_35px_rgba(0,0,0,0.6)] bg-maroon-950">
                       <img
                         src={item.image || item.imageUrl || WEDDING_CONFIG.storyMilestones[idx]?.image || ''}
                         alt={language === 'hi' ? item.titleHi || item.title : item.title}

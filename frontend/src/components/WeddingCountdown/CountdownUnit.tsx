@@ -8,7 +8,7 @@ export const CountdownUnit: React.FC<CountdownUnitProps> = ({ value, label, labe
   return (
     <div className="flex flex-col items-center select-none">
       {/* Premium Luxury Gold-Bordered Glass Box */}
-      <div className="relative w-14 h-18 xs:w-18 xs:h-22 sm:w-28 sm:h-32 md:w-32 md:h-36 rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#581C2B] via-[#380715] to-[#25030C] border-2 border-royalGold/80 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.8)] flex items-center justify-center overflow-hidden group hover:border-royalGold transition-all duration-300">
+      <div className="relative w-14 h-16 xs:w-16 xs:h-20 sm:w-28 sm:h-32 md:w-32 md:h-36 rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#581C2B] via-[#380715] to-[#25030C] border-2 border-royalGold/80 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.8)] flex items-center justify-center overflow-hidden group hover:border-royalGold transition-all duration-300">
         {/* Subtle Top Gloss Layer */}
         <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/15 to-transparent pointer-events-none" />
 

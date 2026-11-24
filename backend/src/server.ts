@@ -125,7 +125,7 @@ export async function seedInitialData() {
         brideFather: 'Shri KBL Srivastava',
         groomName: 'Nitin',
         groomNameHi: 'नितिन',
-        groomMother: 'Smt. Suman',
+        groomMother: 'Smt. Suman Joshi',
         groomFather: 'Shri Lalit Mohan Joshi',
         weddingDate: '2026-12-11T19:00:00+05:30',
         timezone: 'Asia/Kolkata',
@@ -134,10 +134,39 @@ export async function seedInitialData() {
         mapUrl: 'https://maps.google.com/?q=002E+Bank+Colony,+Padari+Bazaar,+Gorakhpur',
       });
       console.log('[Seed] Wedding master configuration record seeded with date: 2026-12-11');
-    } else if (weddingRecord.weddingDate.includes('2026-12-12')) {
-      weddingRecord.weddingDate = '2026-12-11T19:00:00+05:30';
-      await weddingRecord.save();
-      console.log('[Seed] Corrected wedding date in database to 2026-12-11T19:00:00+05:30');
+    } else {
+      let updatedFields = false;
+      if (weddingRecord.weddingDate.includes('2026-12-12')) {
+        weddingRecord.weddingDate = '2026-12-11T19:00:00+05:30';
+        updatedFields = true;
+        console.log('[Seed] Corrected wedding date in database to 2026-12-11T19:00:00+05:30');
+      }
+      if (weddingRecord.groomMother !== 'Smt. Suman Joshi') {
+        weddingRecord.groomMother = 'Smt. Suman Joshi';
+        updatedFields = true;
+        console.log('[Seed] Updated groomMother to Smt. Suman Joshi');
+      }
+      if (weddingRecord.brideMother !== 'Smt. Meera Devi') {
+        weddingRecord.brideMother = 'Smt. Meera Devi';
+        updatedFields = true;
+        console.log('[Seed] Updated brideMother to Smt. Meera Devi');
+      }
+      if (weddingRecord.familyMembers && weddingRecord.familyMembers.length > 0) {
+        weddingRecord.familyMembers.forEach((fm: any) => {
+          if (fm.name && fm.name.includes('Smt. Suman') && !fm.name.includes('Smt. Suman Joshi')) {
+            fm.name = fm.name.replace('Smt. Suman', 'Smt. Suman Joshi');
+            updatedFields = true;
+          }
+          if (fm.name && fm.name.includes('Smt. Meera Srivastava')) {
+            fm.name = fm.name.replace('Smt. Meera Srivastava', 'Smt. Meera Devi');
+            updatedFields = true;
+          }
+        });
+      }
+      if (updatedFields) {
+        await weddingRecord.save();
+        console.log('[Seed] Successfully updated family details in MongoDB');
+      }
     }
 
     // 2b. Seed / Repair Our Story Milestones with published website content

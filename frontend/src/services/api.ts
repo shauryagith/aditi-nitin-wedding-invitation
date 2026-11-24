@@ -114,7 +114,7 @@ export const weddingService = {
             bio: res.data.brideBio || res.data.bride?.bio || WEDDING_CONFIG.bride.bio,
             photoUrl: res.data.brideImage || res.data.bride?.photoUrl || res.data.bride?.image || WEDDING_CONFIG.bride.photoUrl,
             image: res.data.brideImage || res.data.bride?.image || WEDDING_CONFIG.bride.photoUrl,
-            mother: res.data.brideMother || res.data.bride?.mother || WEDDING_CONFIG.bride.mother,
+            mother: (res.data.brideMother === 'Smt. Meera Srivastava' ? 'Smt. Meera Devi' : res.data.brideMother) || res.data.bride?.mother || WEDDING_CONFIG.bride.mother,
             father: res.data.brideFather || res.data.bride?.father || WEDDING_CONFIG.bride.father,
           },
           groom: {
@@ -127,12 +127,20 @@ export const weddingService = {
             bio: res.data.groomBio || res.data.groom?.bio || WEDDING_CONFIG.groom.bio,
             photoUrl: res.data.groomImage || res.data.groom?.photoUrl || res.data.groom?.image || WEDDING_CONFIG.groom.photoUrl,
             image: res.data.groomImage || res.data.groom?.image || WEDDING_CONFIG.groom.photoUrl,
-            mother: res.data.groomMother || res.data.groom?.mother || WEDDING_CONFIG.groom.mother,
+            mother: (res.data.groomMother === 'Smt. Suman' ? 'Smt. Suman Joshi' : res.data.groomMother) || res.data.groom?.mother || WEDDING_CONFIG.groom.mother,
             father: res.data.groomFather || res.data.groom?.father || WEDDING_CONFIG.groom.father,
           },
-          familyMembers: res.data.familyMembers && res.data.familyMembers.length > 0
+          familyMembers: (res.data.familyMembers && res.data.familyMembers.length > 0
             ? res.data.familyMembers
-            : WEDDING_CONFIG.familyMembers || [],
+            : WEDDING_CONFIG.familyMembers || []
+          ).map((m: any) => ({
+            ...m,
+            name: m.name === 'Shri Lalit Mohan Joshi & Smt. Suman'
+              ? 'Shri Lalit Mohan Joshi & Smt. Suman Joshi'
+              : m.name === 'Shri KBL Srivastava & Smt. Meera Srivastava'
+              ? 'Shri KBL Srivastava & Smt. Meera Devi'
+              : m.name,
+          })),
           venue: {
             ...WEDDING_CONFIG.venue,
             ...(typeof res.data.venue === 'object' && res.data.venue !== null

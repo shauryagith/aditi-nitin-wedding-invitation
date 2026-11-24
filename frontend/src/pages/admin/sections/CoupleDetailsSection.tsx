@@ -18,16 +18,16 @@ export const CoupleDetailsSection: React.FC<CoupleDetailsSectionProps> = ({
       initialContent?.brideBio ||
       'A graceful soul whose smile radiates warmth and joy. Daughter of Smt. Meera Devi and Shri KBL Srivastava.',
     brideImage: initialContent?.brideImage || '/wedding-assets/optimized/aditi-portrait.webp',
-    brideMother: initialContent?.brideMother || 'Smt. Meera Devi',
+    brideMother: (initialContent?.brideMother === 'Smt. Meera Srivastava' ? 'Smt. Meera Devi' : initialContent?.brideMother) || 'Smt. Meera Devi',
     brideFather: initialContent?.brideFather || 'Shri KBL Srivastava',
 
     groomName: initialContent?.groomName || 'Nitin',
     groomNameHi: initialContent?.groomNameHi || 'नितिन',
     groomBio:
-      initialContent?.groomBio ||
-      'A visionary leader with a heart of gold. Son of Smt. Suman and Shri Lalit Mohan Joshi.',
+      initialContent?.groomBio?.replace('Son of Smt. Suman and', 'Son of Smt. Suman Joshi and') ||
+      'A visionary leader with a heart of gold. Son of Smt. Suman Joshi and Shri Lalit Mohan Joshi.',
     groomImage: initialContent?.groomImage || '/wedding-assets/optimized/nitin-portrait.webp',
-    groomMother: initialContent?.groomMother || 'Smt. Suman',
+    groomMother: (initialContent?.groomMother === 'Smt. Suman' ? 'Smt. Suman Joshi' : initialContent?.groomMother) || 'Smt. Suman Joshi',
     groomFather: initialContent?.groomFather || 'Shri Lalit Mohan Joshi',
   });
 

@@ -25,7 +25,7 @@ export const weddingController = {
           brideFather: 'Shri KBL Srivastava',
           groomName: 'Nitin',
           groomNameHi: 'नितिन',
-          groomMother: 'Smt. Suman',
+          groomMother: 'Smt. Suman Joshi',
           groomFather: 'Shri Lalit Mohan Joshi',
           weddingDate: '2026-12-11T19:00:00+05:30',
           timezone: 'Asia/Kolkata',

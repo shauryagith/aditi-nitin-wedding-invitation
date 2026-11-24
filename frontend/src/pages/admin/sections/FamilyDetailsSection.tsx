@@ -13,7 +13,15 @@ export const FamilyDetailsSection: React.FC<FamilyDetailsSectionProps> = ({
 }) => {
   const [members, setMembers] = useState(
     initialMembers && initialMembers.length > 0
-      ? initialMembers
+      ? initialMembers.map((m) => ({
+          ...m,
+          name:
+            m.name === 'Shri Lalit Mohan Joshi & Smt. Suman'
+              ? 'Shri Lalit Mohan Joshi & Smt. Suman Joshi'
+              : m.name === 'Shri KBL Srivastava & Smt. Meera Srivastava'
+              ? 'Shri KBL Srivastava & Smt. Meera Devi'
+              : m.name,
+        }))
       : [
           {
             id: 'fam-1',
@@ -25,7 +33,7 @@ export const FamilyDetailsSection: React.FC<FamilyDetailsSectionProps> = ({
           },
           {
             id: 'fam-2',
-            name: 'Shri Lalit Mohan Joshi & Smt. Suman',
+            name: 'Shri Lalit Mohan Joshi & Smt. Suman Joshi',
             relationship: "Groom's Loving Parents",
             side: 'GROOM',
             description: 'Welcoming Aditi into their family with open arms and immense love.',

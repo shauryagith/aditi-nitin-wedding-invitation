@@ -166,7 +166,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
       : defaultSlides;
 
   return (
-    <section id="hero" className="relative w-full h-screen min-h-[640px] max-h-[1080px] overflow-hidden bg-deepBurgundy">
+    <section id="hero" className="relative w-full h-[100dvh] min-h-[580px] sm:min-h-[640px] max-h-[1080px] overflow-hidden bg-deepBurgundy">
       {/* Falling Flower Petals Canvas Simulation */}
       <FloatingPetalsOverlay className="z-20" />
 
@@ -223,7 +223,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
         }}
         className="w-full h-full"
       >
-        {slides.map((slide) => (
+        {slides.map((slide, idx) => (
           <SwiperSlide key={slide.id} className="relative w-full h-full overflow-hidden">
             {/* Background Image with Smooth Ken Burns Zoom */}
             <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -234,8 +234,10 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
                 <img
                   src={slide.image}
                   alt={slide.alt}
-                  className="w-full h-full object-cover object-center ken-burns-active"
-                  loading="eager"
+                  className="w-full h-full object-cover object-[center_20%] sm:object-center ken-burns-active"
+                  loading={idx === 0 ? 'eager' : 'lazy'}
+                  // @ts-ignore
+                  fetchPriority={idx === 0 ? 'high' : 'low'}
                   onError={(e) => {
                     const target = e.currentTarget;
                     if (slide.fallbackImage && target.src !== slide.fallbackImage && !target.src.endsWith(slide.fallbackImage)) {
@@ -252,23 +254,23 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
             <div className="absolute inset-0 mandala-bg opacity-10 z-10 pointer-events-none" />
 
             {/* Slide Foreground Content */}
-            <div className="relative z-20 w-full h-full flex flex-col items-center justify-center px-4 sm:px-6 text-center text-ivory max-w-5xl mx-auto pt-16">
+            <div className="relative z-20 w-full h-full flex flex-col items-center justify-center px-3 xs:px-4 sm:px-6 text-center text-ivory max-w-5xl mx-auto pt-12 sm:pt-16 pb-6 sm:pb-8">
               {/* Sacred Ganesha Emblem */}
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
-                className="mb-3"
+                className="mb-2 sm:mb-3"
               >
-                <GaneshaEmblem size={64} className="text-royalGold drop-shadow-md" />
-                <span className="text-xs sm:text-sm uppercase tracking-widest text-royalGold font-semibold font-hindi block mt-2">
+                <GaneshaEmblem size={56} className="text-royalGold drop-shadow-md sm:scale-110" />
+                <span className="text-[11px] sm:text-sm uppercase tracking-widest text-royalGold font-semibold font-hindi block mt-1.5 sm:mt-2">
                   {slide.subtitle}
                 </span>
               </motion.div>
 
               {/* Main Heading */}
               {slide.isHeroTitle ? (
-                <div className="my-2 sm:my-4">
+                <div className="my-1.5 sm:my-4">
                   <h1 className="font-heading text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-ivory drop-shadow-lg">
                     <span className="font-script text-4xl xs:text-5xl sm:text-7xl md:text-8xl text-champagne block sm:inline">
                       {language === 'hi' ? coupleNames.brideNameHi : coupleNames.brideName}
@@ -282,53 +284,53 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onOpenShareModal }) => {
                   </h1>
                 </div>
               ) : (
-                <div className="my-2 sm:my-4">
-                  <h2 className="font-heading text-2xl xs:text-3xl sm:text-5xl md:text-6xl font-bold text-ivory max-w-3xl mx-auto leading-tight drop-shadow-lg">
+                <div className="my-1.5 sm:my-4">
+                  <h2 className="font-heading text-xl xs:text-2xl sm:text-5xl md:text-6xl font-bold text-ivory max-w-3xl mx-auto leading-tight drop-shadow-lg">
                     {slide.title}
                   </h2>
                 </div>
               )}
 
               {/* Ornamental Divider */}
-              <OrnamentalDivider color="#D4AF37" className="my-2 sm:my-3 scale-80 sm:scale-100" />
+              <OrnamentalDivider color="#D4AF37" className="my-1.5 sm:my-3 scale-75 sm:scale-100" />
 
               {/* Highlight / Tagline */}
-              <p className="font-cormorant text-base xs:text-lg sm:text-2xl md:text-3xl text-royalGold font-medium tracking-wide italic max-w-2xl mx-auto drop-shadow">
+              <p className="font-cormorant text-sm xs:text-base sm:text-2xl md:text-3xl text-royalGold font-medium tracking-wide italic max-w-2xl mx-auto drop-shadow">
                 {slide.highlight}
               </p>
 
               {/* Date & Location Pill */}
-              <div className="mt-3 sm:mt-4 inline-flex items-center gap-2 px-3.5 sm:px-6 py-1.5 sm:py-2 rounded-full bg-deepBurgundy/80 border border-royalGold/60 shadow-lg backdrop-blur-md text-[11px] sm:text-sm text-champagne font-semibold tracking-wider">
-                <Calendar className="w-3.5 h-3.5 text-royalGold" />
+              <div className="mt-2.5 sm:mt-4 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-1 sm:py-2 rounded-full bg-deepBurgundy/80 border border-royalGold/60 shadow-lg backdrop-blur-md text-[10px] xs:text-[11px] sm:text-sm text-champagne font-semibold tracking-wider">
+                <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-royalGold" />
                 <span>{slide.date}</span>
               </div>
 
               {/* Three Required Action Buttons */}
-              <div className="mt-6 sm:mt-10 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 max-w-xl mx-auto">
+              <div className="mt-5 sm:mt-10 flex flex-wrap items-center justify-center gap-2 xs:gap-2.5 sm:gap-4 max-w-xl mx-auto">
                 {/* 1. Discover Invitation */}
                 <button
                   onClick={() => scrollTo('#invitation')}
-                  className="px-4 xs:px-5 sm:px-7 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-royalGold via-[#E0BC6C] to-royalGold text-deepBurgundy font-bold text-xs sm:text-sm tracking-wide shadow-xl hover:shadow-royalGold/40 hover:scale-105 active:scale-95 transition-all duration-300 border border-royalGold flex items-center gap-2"
+                  className="px-3.5 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-royalGold via-[#E0BC6C] to-royalGold text-deepBurgundy font-bold text-[11px] xs:text-xs sm:text-sm tracking-wide shadow-xl hover:shadow-royalGold/40 hover:scale-105 active:scale-95 transition-all duration-300 border border-royalGold flex items-center gap-1.5 sm:gap-2"
                 >
-                  <Sparkles className="w-4 h-4 text-deepBurgundy" />
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-deepBurgundy" />
                   <span>{t.common.discoverInvitation}</span>
                 </button>
 
                 {/* 2. View Wedding Events */}
                 <button
                   onClick={() => scrollTo('#events')}
-                  className="px-4 xs:px-5 sm:px-7 py-2.5 sm:py-3 rounded-full bg-primaryMaroon/80 hover:bg-primaryMaroon text-champagne font-semibold text-xs sm:text-sm tracking-wide shadow-lg border border-royalGold/60 hover:border-royalGold hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 backdrop-blur-md"
+                  className="px-3.5 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-full bg-primaryMaroon/80 hover:bg-primaryMaroon text-champagne font-semibold text-[11px] xs:text-xs sm:text-sm tracking-wide shadow-lg border border-royalGold/60 hover:border-royalGold hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-1.5 sm:gap-2 backdrop-blur-md"
                 >
-                  <Calendar className="w-4 h-4 text-royalGold" />
+                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-royalGold" />
                   <span>{t.common.viewEvents}</span>
                 </button>
 
                 {/* 3. Share Invitation */}
                 <button
                   onClick={onOpenShareModal}
-                  className="px-4 xs:px-5 sm:px-7 py-2.5 sm:py-3 rounded-full bg-deepBurgundy/80 hover:bg-deepBurgundy text-royalGold font-semibold text-xs sm:text-sm tracking-wide shadow-lg border border-royalGold/50 hover:border-royalGold hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 backdrop-blur-md"
+                  className="px-3.5 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-full bg-deepBurgundy/80 hover:bg-deepBurgundy text-royalGold font-semibold text-[11px] xs:text-xs sm:text-sm tracking-wide shadow-lg border border-royalGold/50 hover:border-royalGold hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-1.5 sm:gap-2 backdrop-blur-md"
                 >
-                  <Share2 className="w-4 h-4 text-royalGold" />
+                  <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-royalGold" />
                   <span>{t.common.shareInvitation}</span>
                 </button>
               </div>
