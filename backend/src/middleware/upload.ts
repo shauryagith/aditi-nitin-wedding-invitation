@@ -18,9 +18,17 @@ const ALLOWED_AUDIO_MIMES = [
   'audio/mp3',
   'audio/mp4',
   'audio/x-m4a',
+  'audio/m4a',
   'audio/aac',
+  'audio/x-aac',
   'audio/ogg',
+  'application/ogg',
   'audio/wav',
+  'audio/x-wav',
+  'audio/wave',
+  'audio/webm',
+  'audio/flac',
+  'audio/x-flac',
 ];
 
 // Memory storage for images and audio so storage providers (Cloudinary/Local) can process buffers directly
@@ -46,11 +54,14 @@ export const uploadAudio = multer({
     fileSize: 50 * 1024 * 1024, // 50MB maximum audio size for full-length wedding tracks
   },
   fileFilter: (req, file, cb) => {
-    const mime = file.mimetype.toLowerCase();
+    const mime = (file.mimetype || '').toLowerCase();
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const validExtensions = ['.mp3', '.m4a', '.aac', '.ogg', '.wav', '.webm', '.flac'];
+
     if (
       ALLOWED_AUDIO_MIMES.includes(mime) ||
       mime.startsWith('audio/') ||
-      file.originalname.match(/\.(mp3|m4a|aac|ogg|wav|webm|flac|wma)$/i)
+      validExtensions.includes(ext)
     ) {
       cb(null, true);
     } else {

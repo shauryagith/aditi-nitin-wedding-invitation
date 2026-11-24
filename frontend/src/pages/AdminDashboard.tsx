@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Menu, X, RefreshCw } from 'lucide-react';
 import { adminService, weddingService } from '../services/api';
 import { weddingSyncManager } from '../utils/dataSync';
@@ -33,11 +33,40 @@ import { WebsiteSettingsSection } from './admin/sections/WebsiteSettingsSection'
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { admin, logout: authLogout } = useAuth();
   const { joinAdminRoom } = useSocket();
-  const [activeTab, setActiveTab] = useState<AdminTabId>('overview');
+
+  const getInitialTab = (): AdminTabId => {
+    const fromUrl = searchParams.get('tab') as AdminTabId;
+    if (fromUrl) return fromUrl;
+    try {
+      const fromStorage = localStorage.getItem('aditi_nitin_admin_active_tab') as AdminTabId;
+      if (fromStorage) return fromStorage;
+    } catch {}
+    return 'overview';
+  };
+
+  const [activeTab, setActiveTabState] = useState<AdminTabId>(getInitialTab);
+
+  const setActiveTab = (tab: AdminTabId) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab }, { replace: true });
+    try {
+      localStorage.setItem('aditi_nitin_admin_active_tab', tab);
+    } catch {}
+  };
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') as AdminTabId;
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTabState(tabFromUrl);
+    }
+  }, [searchParams]);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     joinAdminRoom();
@@ -86,8 +115,12 @@ export const AdminDashboard: React.FC = () => {
   const [gallery, setGallery] = useState<GalleryPhoto[]>(INITIAL_GALLERY_PHOTOS);
   const [guests, setGuests] = useState<GuestRecord[]>([]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (initial = false) => {
+    if (initial) {
+      setIsInitialLoading(true);
+    } else {
+      setIsSyncing(true);
+    }
     try {
       const [authRes, statsRes, contentRes, eventsRes, galleryRes, guestsRes] = await Promise.allSettled([
         adminService.checkAuth(),
@@ -122,15 +155,18 @@ export const AdminDashboard: React.FC = () => {
     } catch (err) {
       console.warn('Admin load data notice:', err);
     } finally {
-      setLoading(false);
+      if (initial) {
+        setIsInitialLoading(false);
+      }
+      setIsSyncing(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData(true);
     return weddingSyncManager.subscribe((entity) => {
       if (entity === 'rsvp' || entity === 'all') {
-        loadData();
+        loadData(false);
       }
     });
   }, []);
@@ -270,7 +306,15 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
-        {loading ? (
+        {/* Subtle background syncing pill */}
+        {isSyncing && !isInitialLoading && (
+          <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-burgundy-950/90 border border-gold-500/40 text-gold-300 text-xs shadow-xl backdrop-blur-md animate-pulse">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin text-gold-400" />
+            <span>Syncing updates...</span>
+          </div>
+        )}
+
+        {isInitialLoading ? (
           <div className="h-96 flex flex-col items-center justify-center gap-3 text-gold-400">
             <RefreshCw className="w-8 h-8 animate-spin" />
             <span className="text-sm font-medium tracking-wider">Synchronizing Admin CMS...</span>

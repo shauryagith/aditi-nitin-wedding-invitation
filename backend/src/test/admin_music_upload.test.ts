@@ -203,6 +203,35 @@ describe('Admin Background Music Upload - Security & Functional Integration Test
       expect(res.body.success).toBe(false);
       expect(res.body.message).toMatch(/Invalid audio format/i);
     });
+
+    it('returns 400 Bad Request when uploaded audio file is empty (0 bytes)', async () => {
+      const emptyBuffer = Buffer.alloc(0);
+      const res = await request(app)
+        .post('/api/admin/music/upload')
+        .set('Cookie', adminCookie)
+        .set('X-Requested-With', 'XMLHttpRequest')
+        .field('title', 'Empty File Track')
+        .attach('audio', emptyBuffer, 'empty.mp3');
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toMatch(/empty/i);
+    });
+
+    it('returns 400 Bad Request when disguised executable or script is uploaded with audio extension', async () => {
+      // Disguised Windows PE executable with .mp3 extension
+      const fakeExeBuffer = Buffer.from([0x4d, 0x5a, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00]);
+      const res = await request(app)
+        .post('/api/admin/music/upload')
+        .set('Cookie', adminCookie)
+        .set('X-Requested-With', 'XMLHttpRequest')
+        .field('title', 'Disguised Exe Track')
+        .attach('audio', fakeExeBuffer, 'virus.mp3');
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toMatch(/Invalid audio file content|corrupted/i);
+    });
   });
 
   describe('4. Successful Real Admin Upload (Cookie + X-Requested-With + Multer + Cloudinary/Storage + MongoDB)', () => {

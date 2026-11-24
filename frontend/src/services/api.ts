@@ -492,16 +492,27 @@ export const adminService = {
 
         const data = await response.json().catch(() => ({}));
         if (!response.ok || data.success === false) {
+          const errMsg = data.message || data.error || `Audio upload failed with status ${response.status}`;
+          
           if (response.status === 401 && typeof window !== 'undefined') {
             setStoredToken(null);
             window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { endpoint: '/admin/music/upload' } }));
           }
+
+          // Immediate throw for 4xx client errors (400 Bad Request, 403 Forbidden, etc.) without retrying
+          if (response.status >= 400 && response.status < 500) {
+            const clientErr: any = new Error(errMsg);
+            clientErr.isClientError = true;
+            throw clientErr;
+          }
+
           if ([502, 503, 504].includes(response.status) && attempt < maxRetries) {
             // Render cold start retry
             await new Promise((r) => setTimeout(r, 2000));
             continue;
           }
-          throw new Error(data.message || data.error || `Audio upload failed with status ${response.status}`);
+
+          throw new Error(errMsg);
         }
 
         weddingSyncManager.notifyUpdate('/admin/music');
@@ -509,10 +520,15 @@ export const adminService = {
         return data;
       } catch (err: any) {
         lastError = err;
+        if (err.isClientError) {
+          // Do not retry client errors (400, 401, 403)
+          throw err;
+        }
         if (err.name === 'AbortError') {
           lastError = new Error('Upload timed out after 90 seconds. The server might be waking up or file is very large.');
+          throw lastError;
         }
-        if (attempt < maxRetries && err.name !== 'AbortError') {
+        if (attempt < maxRetries) {
           await new Promise((r) => setTimeout(r, 2000));
         }
       }

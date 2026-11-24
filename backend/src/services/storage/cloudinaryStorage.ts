@@ -191,6 +191,9 @@ export class CloudinaryStorageService implements IStorageService {
         storageProvider: 'cloudinary',
       };
     } catch (err: any) {
+      if (ENV.STORAGE_PROVIDER === 'cloudinary') {
+        throw new Error(`Cloudinary audio upload failed: ${err.message || 'Unknown Cloudinary error'}`);
+      }
       console.warn(`[Cloudinary Audio Upload] Cloudinary upload notice (${err.message}). Falling back to LocalStorageService.`);
       const { LocalStorageService } = await import('./localStorage.js');
       const localService = new LocalStorageService();

@@ -53,6 +53,7 @@ export const musicController = {
   },
 
   uploadTrack: async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    let uploadResult: any = null;
     try {
       const file = req.file;
       if (!file) {
@@ -60,13 +61,37 @@ export const musicController = {
         return;
       }
 
+      if (!file.buffer || file.buffer.length === 0) {
+        res.status(400).json({ success: false, message: 'Audio file cannot be empty (0 bytes).' });
+        return;
+      }
+
+      // Guard against non-audio payloads disguised with audio extensions (scripts, executables, images)
+      const buf = file.buffer;
+      const isExe = buf.length >= 2 && buf[0] === 0x4d && buf[1] === 0x5a; // 'MZ'
+      const isElf = buf.length >= 4 && buf[0] === 0x7f && buf[1] === 0x45 && buf[2] === 0x4c && buf[3] === 0x46; // ELF
+      const isPng = buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+      const isJpeg = buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+      const isGif = buf.length >= 4 && buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38;
+      const textPreview = buf.subarray(0, 100).toString('utf8').trim().toLowerCase();
+      const isHtmlOrScript = textPreview.startsWith('<!doctype') || textPreview.startsWith('<html') || textPreview.startsWith('<?php') || textPreview.startsWith('#!/');
+
+      if (isExe || isElf || isPng || isJpeg || isGif || isHtmlOrScript) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid audio file content. The uploaded file is corrupted or not a valid audio format.',
+        });
+        return;
+      }
+
       const title = req.body.title || path.parse(file.originalname).name;
       const artist = req.body.artist || 'Traditional Shehnai & Sitar';
-      const volume = req.body.volume !== undefined ? parseFloat(req.body.volume) : 0.5;
+      const parsedVol = parseFloat(req.body.volume);
+      const volume = isNaN(parsedVol) ? 0.65 : Math.max(0.0, Math.min(1.0, parsedVol));
       const loop = req.body.loop !== undefined ? req.body.loop === 'true' || req.body.loop === true : true;
       const isDefault = req.body.isDefault === 'true' || req.body.isDefault === true;
 
-      const uploadResult = await storageService.uploadAudio(file.buffer, file.originalname, file.mimetype, {
+      uploadResult = await storageService.uploadAudio(file.buffer, file.originalname, file.mimetype, {
         title,
         artist,
         folder: 'wedding/music',
@@ -119,7 +144,14 @@ export const musicController = {
         message: `Background music uploaded successfully via ${storageService.providerName}`,
         data: track,
       });
-    } catch (err) {
+    } catch (err: any) {
+      // Safe cleanup of orphaned Cloudinary asset if database save or subsequent logic fails
+      if (uploadResult?.publicId && uploadResult?.storageProvider === 'cloudinary') {
+        console.warn(`[Music Upload Cleanup] Rolling back Cloudinary asset (${uploadResult.publicId}) after database error`);
+        await storageService.deleteAsset(uploadResult.publicId, 'video').catch((cleanErr) => {
+          console.error(`[Music Upload Cleanup] Failed to delete orphaned Cloudinary asset:`, cleanErr);
+        });
+      }
       next(err);
     }
   },

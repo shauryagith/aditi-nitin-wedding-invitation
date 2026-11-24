@@ -122,4 +122,62 @@ describe('Frontend adminService.uploadMusicTrack & CSRF / Error Handling', () =>
 
     window.removeEventListener('auth:unauthorized', listener);
   });
+
+  it('5. Throws immediately on 400 Bad Request (invalid file or missing fields) without retrying', async () => {
+    let callCount = 0;
+    global.fetch = vi.fn().mockImplementation(async () => {
+      callCount++;
+      return {
+        ok: false,
+        status: 400,
+        json: async () => ({
+          success: false,
+          message: 'Audio file cannot be empty (0 bytes).',
+        }),
+      };
+    });
+
+    const formData = new FormData();
+    formData.append('audio', new Blob([], { type: 'audio/mpeg' }), 'empty.mp3');
+
+    await expect(adminService.uploadMusicTrack(formData)).rejects.toThrow(
+      'Audio file cannot be empty (0 bytes).'
+    );
+    // Must NOT retry 400 client error
+    expect(callCount).toBe(1);
+  });
+
+  it('6. Retries on 502/503/504 gateway cold start and succeeds on next attempt', async () => {
+    let callCount = 0;
+    global.fetch = vi.fn().mockImplementation(async () => {
+      callCount++;
+      if (callCount === 1) {
+        return {
+          ok: false,
+          status: 502,
+          json: async () => ({
+            success: false,
+            message: 'Bad Gateway (Server waking up)',
+          }),
+        };
+      }
+      return {
+        ok: true,
+        status: 201,
+        json: async () => ({
+          success: true,
+          message: 'Background music uploaded successfully',
+          data: { _id: 'track-retry-1', title: 'Retry Track' },
+        }),
+      };
+    });
+
+    const formData = new FormData();
+    formData.append('audio', new Blob(['test audio'], { type: 'audio/mpeg' }), 'retry.mp3');
+
+    const result = await adminService.uploadMusicTrack(formData);
+    expect(callCount).toBe(2);
+    expect(result.success).toBe(true);
+    expect(result.data.title).toBe('Retry Track');
+  });
 });

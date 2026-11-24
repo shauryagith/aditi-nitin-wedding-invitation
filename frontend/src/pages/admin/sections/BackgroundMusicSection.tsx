@@ -16,11 +16,15 @@ import {
   X,
 } from 'lucide-react';
 import { adminService } from '../../../services/api';
+import { weddingSyncManager } from '../../../utils/dataSync';
 import { MusicTrackItem } from '../../../types/wedding';
 
 interface BackgroundMusicSectionProps {
   onRefreshStats: () => void;
 }
+
+const SUPPORTED_AUDIO_EXTENSIONS = ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'webm'];
+const MAX_AUDIO_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
 
 export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
   onRefreshStats,
@@ -33,6 +37,7 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
 
   // Staged File Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [stagedPreviewUrl, setStagedPreviewUrl] = useState<string | null>(null);
   const [trackTitle, setTrackTitle] = useState('');
   const [trackArtist, setTrackArtist] = useState('Traditional Shehnai & Sitar');
   const [trackVolume, setTrackVolume] = useState(0.65);
@@ -44,8 +49,8 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const fetchTracks = async () => {
-    setLoading(true);
+  const fetchTracks = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       const res = await adminService.getMusicTracks();
       if (res && res.data) {
@@ -54,16 +59,28 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
     } catch (err: any) {
       console.warn('Tracks fetch notice:', err.message);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTracks();
+    fetchTracks(true);
+
+    // Auto-sync tracks list when Socket.IO or background updates occur
+    const unsubscribeSync = weddingSyncManager.subscribe((entity) => {
+      if (entity === 'music' || entity === '/admin/music' || entity === 'all') {
+        fetchTracks(false);
+      }
+    });
+
     return () => {
+      unsubscribeSync();
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
+      }
+      if (stagedPreviewUrl) {
+        URL.revokeObjectURL(stagedPreviewUrl);
       }
     };
   }, []);
@@ -95,20 +112,91 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
     }
   };
 
-  const handleFileSelect = (file: File) => {
+  /**
+   * Comprehensive client-side validation:
+   * 1. File existence & non-zero size
+   * 2. Size limit (50MB)
+   * 3. Extension & MIME type
+   * 4. Magic bytes inspection (rejects disguised executable/image files)
+   */
+  const validateAndStageFile = async (file: File) => {
+    setErrorMsg(null);
+
+    // 1. Check empty file
+    if (file.size === 0) {
+      setErrorMsg('The selected audio file is empty (0 bytes). Please choose a valid file.');
+      return;
+    }
+
+    // 2. Check maximum size (50MB)
+    if (file.size > MAX_AUDIO_SIZE_BYTES) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      setErrorMsg(`Audio file size (${sizeMb} MB) exceeds the maximum allowed 50 MB limit.`);
+      return;
+    }
+
+    // 3. Check extension
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const hasValidExt = SUPPORTED_AUDIO_EXTENSIONS.includes(ext);
+    const hasAudioMime = file.type.startsWith('audio/') || file.type === 'application/ogg' || file.type === 'video/ogg';
+
+    if (!hasValidExt && !hasAudioMime) {
+      setErrorMsg('Unsupported format. Please select an audio file (MP3, WAV, M4A, AAC, OGG, FLAC, WEBM).');
+      return;
+    }
+
+    // 4. Magic bytes validation (guard against renamed executables, zip, or images)
+    try {
+      const headerBuffer = await file.slice(0, 16).arrayBuffer();
+      const bytes = new Uint8Array(headerBuffer);
+
+      // Check known non-audio headers
+      const isExe = bytes.length >= 2 && bytes[0] === 0x4d && bytes[1] === 0x5a; // 'MZ'
+      const isElf = bytes.length >= 4 && bytes[0] === 0x7f && bytes[1] === 0x45 && bytes[2] === 0x4c && bytes[3] === 0x46; // ELF
+      const isPng = bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+      const isJpeg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+      const isGif = bytes.length >= 4 && bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38;
+
+      if (isExe || isElf || isPng || isJpeg || isGif) {
+        setErrorMsg('The selected file does not appear to be a valid audio file. Corrupted or disguised files are not supported.');
+        return;
+      }
+    } catch {
+      // If slice fails, proceed with standard MIME validation
+    }
+
+    // Revoke previous staged preview if any
+    if (stagedPreviewUrl) {
+      URL.revokeObjectURL(stagedPreviewUrl);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setStagedPreviewUrl(previewUrl);
     setSelectedFile(file);
+
     const cleanTitle = file.name
       .replace(/\.[^/.]+$/, '')
       .replace(/[-_]/g, ' ')
       .trim();
     setTrackTitle(cleanTitle);
-    setErrorMsg(null);
+  };
+
+  const handleClearStaged = () => {
+    if (stagedPreviewUrl) {
+      URL.revokeObjectURL(stagedPreviewUrl);
+      setStagedPreviewUrl(null);
+    }
+    setSelectedFile(null);
+    setTrackTitle('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleFileSelect(file);
+      validateAndStageFile(file);
     }
   };
 
@@ -117,11 +205,7 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|m4a|aac|ogg|wav|webm|flac)$/i)) {
-        setErrorMsg('Please select a valid audio file (MP3, M4A, AAC, WAV, OGG, FLAC).');
-        return;
-      }
-      handleFileSelect(file);
+      validateAndStageFile(file);
     }
   };
 
@@ -137,6 +221,8 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (uploading) return;
+
     if (!selectedFile) {
       setErrorMsg('Please select an audio file first.');
       return;
@@ -160,16 +246,13 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
       }
       const uploadedTitle = trackTitle.trim() || selectedFile.name.replace(/\.[^/.]+$/, '');
       setSuccessMsg(`"${uploadedTitle}" uploaded successfully and set as ${setAsActive ? 'Active Background Music' : 'Library Track'}!`);
-      setSelectedFile(null);
-      setTrackTitle('');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      await fetchTracks();
+      handleClearStaged();
+      await fetchTracks(false);
       onRefreshStats();
       setTimeout(() => setSuccessMsg(null), 8000);
     } catch (err: any) {
       console.error('Audio upload failed:', err);
+      // Preserve the staged file so the admin can retry without re-selecting
       setErrorMsg(err.message || 'Audio upload failed. Please verify the file is a valid audio format and the server is connected.');
     } finally {
       setUploading(false);
@@ -181,7 +264,7 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
       setErrorMsg(null);
       await adminService.setDefaultMusicTrack(id);
       setSuccessMsg('Default wedding background track updated!');
-      fetchTracks();
+      fetchTracks(false);
       onRefreshStats();
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
@@ -200,7 +283,7 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
       }
       await adminService.deleteMusicTrack(id);
       setSuccessMsg(`Deleted track "${title}".`);
-      fetchTracks();
+      fetchTracks(false);
       onRefreshStats();
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
@@ -351,16 +434,29 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedFile(null);
-                  if (fileInputRef.current) fileInputRef.current.value = '';
-                }}
+                onClick={handleClearStaged}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition"
                 title="Cancel selection"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Audio Playback Preview for staged file */}
+            {stagedPreviewUrl && (
+              <div className="p-3 rounded-xl bg-black/40 border border-gold-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-gold-400 shrink-0">
+                  <Volume2 className="w-4 h-4 text-gold-400" />
+                  <span>Playback Preview:</span>
+                </div>
+                <audio
+                  src={stagedPreviewUrl}
+                  controls
+                  controlsList="nodownload"
+                  className="w-full sm:max-w-md h-8 accent-gold-500 rounded"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -408,10 +504,7 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedFile(null);
-                    if (fileInputRef.current) fileInputRef.current.value = '';
-                  }}
+                  onClick={handleClearStaged}
                   disabled={uploading}
                   className="px-4 py-2 rounded-xl border border-white/20 text-gray-300 hover:text-white text-xs font-semibold transition"
                 >
@@ -450,7 +543,7 @@ export const BackgroundMusicSection: React.FC<BackgroundMusicSectionProps> = ({
         </h3>
         <button
           type="button"
-          onClick={fetchTracks}
+          onClick={() => fetchTracks(true)}
           className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1 transition"
         >
           <RefreshCw className="w-3.5 h-3.5" />
